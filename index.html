@@ -2,348 +2,351 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador de Maquetes 3D Interativo</title>
-    <style>
-        :root {
-            --bg-color: #070a13;
-            --panel-bg: rgba(15, 22, 42, 0.85);
-            --text-color: #f1f5f9;
-            --accent-color: #3b82f6;
-            --accent-hover: #2563eb;
-            --border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        #canvas-container {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        /* Interface de Controle */
-        #ui-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            padding: 20px;
-            gap: 20px;
-        }
-
-        .panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            pointer-events: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            overflow-y: auto;
-            max-height: calc(100vh - 40px);
-        }
-
-        h2 {
-            font-size: 1.2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            color: #93c5fd;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        label {
-            font-size: 0.85rem;
-            color: #94a3b8;
-        }
-
-        .input-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        input[type="range"] {
-            flex: 1;
-            accent-color: var(--accent-color);
-            cursor: pointer;
-        }
-
-        input[type="number"], select, input[type="color"] {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            padding: 6px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            text-align: center;
-        }
-
-        input[type="number"] { width: 65px; }
-        input[type="color"] { width: 50px; height: 32px; padding: 2px; cursor: pointer; }
-        select { width: 100%; cursor: pointer; text-align-last: center; }
-
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-
-        .btn:hover { background: var(--accent-hover); }
-        .btn-danger { background: #ef4444; }
-        .btn-danger:hover { background: #dc2626; }
-
-        /* Botão de Upload Invisível customizado */
-        .file-upload-btn {
-            border: 2px dashed var(--border-color);
-            padding: 15px;
-            text-align: center;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        .file-upload-btn:hover { border-color: var(--accent-color); }
-
-        #loading-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #070a13;
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            gap: 15px;
-            transition: opacity 0.5s ease;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(255,255,255,0.1);
-            border-top-color: var(--accent-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visualizador de modelos 3D</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
+
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-sidebar: #1e293b;
+            --bg-workspace: #070a13;
+            --accent-cad: #3b82f6;
+            --accent-cad-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --success: #22c55e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* TELA DE LOADING */
+        #welcome-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; transition: opacity 0.5s ease; opacity: 1;
+        }
+        .login-card {
+            background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 24px;
+            border: 1px solid var(--border-color); backdrop-filter: blur(16px);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; max-width: 440px; width: 90%;
+        }
+        .login-card img { width: 110px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3)); }
+        .brand-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+        .brand-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 25px; }
+        .btn-enter {
+            width: 100%; padding: 16px; background: var(--accent-cad); color: white;
+            border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(37,99,235,0.4);
+        }
+
+        /* HEADER PRINCIPAL */
+        header { height: 60px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; }
+        .logo { font-weight: 800; font-size: 13px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+        .logo span { background: var(--accent-cad); color: white; padding: 3px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; }
+        .btn-clear { padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; transition: background 0.2s; }
+
+        /* WORKSPACE UNIFICADO */
+        .main-workspace { display: flex; flex: 1; height: calc(100vh - 60px); position: relative; background: var(--bg-workspace); }
+
+        /* VIEWPORT DO MOTOR THREE.JS */
+        #render-view { flex: 1; height: 100%; position: relative; width: 100%; }
+        #three-container { width: 100%; height: 100%; }
+
+        /* HUD DE STATUS */
+        .hud-bar { position: absolute; top: 12px; left: 12px; right: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 11px; font-family: monospace; color: var(--text-main); pointer-events: none; z-index: 80; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hud-bar::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; flex-shrink: 0; }
+
+        /* BOTÃO TOGGLE CONFIGURAÇÕES (MOBILE ONLY) */
+        .btn-toggle-panel { display: none; position: absolute; bottom: 85px; right: 16px; z-index: 110; width: 48px; height: 48px; background: var(--accent-cad); border-radius: 50%; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: none; cursor: pointer; }
+
+        /* DROP ZONE / UPLOAD DE ARQUIVOS */
+        .upload-zone {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95); border: 2px dashed var(--accent-cad);
+            padding: 12px 20px; border-radius: 12px; display: flex; gap: 10px; align-items: center;
+            z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            width: calc(100% - 32px); max-width: 400px; justify-content: center;
+        }
+        .upload-zone label { font-size: 12px; font-weight: 700; color: white; cursor: pointer; background: var(--accent-cad); padding: 8px 14px; border-radius: 6px; text-align: center; white-space: nowrap; }
+        .upload-zone span { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        #file-input { display: none; }
+
+        /* PAINEL LATERAL DE PROPRIEDADES */
+        aside.right-panel { width: 300px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 20px; z-index: 50; overflow-y: auto; transition: transform 0.3s ease; }
+        .panel-section-title { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
+        .prop-group { display: flex; flex-direction: column; gap: 6px; }
+        .prop-group label { font-size: 11px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; }
+        .prop-group label span { color: var(--accent-cad); font-family: monospace; }
+        .prop-select, .prop-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; outline: none; background: var(--bg-main); color: var(--text-main); }
+        .prop-button { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: #0f766e; color: #ecfeff; font-size: 12px; font-weight: 700; cursor: pointer; border: none; }
+        .prop-button.secondary { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); }
+        .axis-row { display: grid; grid-template-columns: 20px 1fr 60px; gap: 8px; align-items: center; }
+        .axis-row strong { font-size: 11px; color: var(--text-muted); text-align: center; }
+        .axis-row .prop-input { padding: 6px; text-align: right; font-size: 12px; }
+        
+        input[type="range"] { height: 6px; -webkit-appearance: none; background: var(--border-color); border-radius: 3px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-cad); cursor: pointer; }
+        
+        .info-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+        .info-card span { color: var(--text-main); }
+
+        /* RESPONSIVIDADE SMARTPHONES */
+        @media (max-width: 768px) {
+            header .logo span { display: none; }
+            .main-workspace { flex-direction: column; }
+            .upload-zone span { display: none; }
+            .upload-zone { bottom: 16px; width: calc(100% - 80px); left: 16px; transform: none; }
+            .btn-toggle-panel { display: block; }
+            aside.right-panel {
+                position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh;
+                border-left: none; border-top: 1px solid var(--border-color);
+                transform: translateY(100%); z-index: 105;
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+                border-radius: 20px 20px 0 0;
+            }
+            aside.right-panel.active { transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 
-    <div id="loading-screen">
-        <div class="spinner"></div>
-        <p id="loading-text">Inicializando Banco de Dados...</p>
-    </div>
-
-    <div id="canvas-container"></div>
-
-    <div id="ui-container">
-        <div class="panel">
-            <h2>Arquivo Maquete</h2>
-            <label class="file-upload-btn">
-                <span>Selecionar arquivo .GLB / .GLTF</span>
-                <input type="file" id="file-input" accept=".glb,.gltf" style="display: none;">
-            </label>
-            <button class="btn btn-danger" onclick="triggerClearModel()">Remover Maquete</button>
-
-            <h2>Iluminação Solar</h2>
-            <div class="control-group">
-                <label>Órbita do Sol (Graus)</label>
-                <div class="input-row">
-                    <input type="range" id="prop-solar-pos" min="0" max="360" value="90" oninput="dbSave('solarPos', this.value)">
-                </div>
-            </div>
-            <div class="control-group">
-                <label>Intensidade do Sol</label>
-                <div class="input-row">
-                    <input type="range" id="prop-light" min="0" max="10" step="0.1" value="2" oninput="dbSave('lightIntensity', this.value)">
-                </div>
-            </div>
-            <div class="control-group">
-                <label>Luz Ambiente</label>
-                <div class="input-row">
-                    <input type="range" id="prop-ambient" min="0" max="2" step="0.05" value="0.5" oninput="dbSave('ambientIntensity', this.value)">
-                </div>
-            </div>
-
-            <h2>Cenário & Fundo</h2>
-            <div class="control-group">
-                <label>Cor do Fundo</label>
-                <input type="color" id="prop-bg-color" value="#070a13" onchange="dbSave('bgColor', this.value)">
-            </div>
-            <label class="checkbox-row">
-                <input type="checkbox" id="prop-grid-toggle" checked onchange="dbSave('gridVisible', this.checked)">
-                <span>Exibir Grade Guia</span>
-            </label>
-            <div class="control-group">
-                <label>Malha de Piso</label>
-                <select id="prop-ground-mesh" onchange="dbSave('groundMesh', this.value)">
-                    <option value="none">Nenhum (Vazio)</option>
-                    <option value="grid">Piso Técnico Escuro</option>
-                    <option value="shadow">Apenas Sombra Recebida</option>
-                </select>
-            </div>
-
-            <h2>Ajuste de Posição (X, Y, Z)</h2>
-            <div class="control-group">
-                <label>Posição X (Lateral)</label>
-                <div class="input-row">
-                    <input type="range" id="move-x" min="-50" max="50" step="0.5" value="0" oninput="document.getElementById('move-x-num').value=this.value; dbSave('posX', this.value)">
-                    <input type="number" id="move-x-num" value="0" step="0.5" onchange="document.getElementById('move-x').value=this.value; dbSave('posX', this.value)">
-                </div>
-            </div>
-            <div class="control-group">
-                <label>Posição Y (Altura)</label>
-                <div class="input-row">
-                    <input type="range" id="move-y" min="-20" max="50" step="0.5" value="0" oninput="document.getElementById('move-y-num').value=this.value; dbSave('posY', this.value)">
-                    <input type="number" id="move-y-num" value="0" step="0.5" onchange="document.getElementById('move-y').value=this.value; dbSave('posY', this.value)">
-                </div>
-            </div>
-            <div class="control-group">
-                <label>Posição Z (Profundidade)</label>
-                <div class="input-row">
-                    <input type="range" id="move-z" min="-50" max="50" step="0.5" value="0" oninput="document.getElementById('move-z-num').value=this.value; dbSave('posZ', this.value)">
-                    <input type="number" id="move-z-num" value="0" step="0.5" onchange="document.getElementById('move-z').value=this.value; dbSave('posZ', this.value)">
-                </div>
-            </div>
-
-            <h2>Escala & Rotação</h2>
-            <div class="control-group">
-                <label>Tamanho (Escala)</label>
-                <div class="input-row">
-                    <input type="range" id="scale-m" min="0.05" max="10" step="0.05" value="1" oninput="document.getElementById('scale-m-num').value=this.value; dbSave('scale', this.value)">
-                    <input type="number" id="scale-m-num" value="1" step="0.05" onchange="document.getElementById('scale-m').value=this.value; dbSave('scale', this.value)">
-                </div>
-            </div>
-            <div class="control-group">
-                <label>Rotação Horizontal (Y)</label>
-                <div class="input-row">
-                    <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="document.getElementById('rot-y-num').value=this.value; dbSave('rotY', this.value)">
-                    <input type="number" id="rot-y-num" value="0" step="1" onchange="document.getElementById('rot-y').value=this.value; dbSave('rotY', this.value)">
-                </div>
-            </div>
-            <button class="btn" onclick="triggerResetTransform()">Resetar Posição</button>
+    <div id="welcome-screen">
+        <div class="login-card">
+            <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Arthur 3D Logo">
+            <h1 class="brand-title">Visualizador de modelos 3D</h1>
+            <p class="brand-subtitle">developed by Arthur Willian</p>
+            <button class="btn-enter" onclick="enterStudio()">Abrir visualizador</button>
         </div>
     </div>
 
+    <header>
+        <div class="logo">Visualizador 3D <span>Maquetes e estudo solar</span></div>
+        <div>
+            <button class="btn-clear" onclick="clearModel()">Resetar Cena</button>
+        </div>
+    </header>
+
+    <div class="main-workspace">
+        <div id="render-view">
+            <div class="hud-bar" id="hud-status">Aguardando maquete (.glb, .fbx)...</div>
+            <div id="three-container"></div>
+
+            <button class="btn-toggle-panel" id="toggle-panel-btn" onclick="toggleMobilePanel()">⚙️</button>
+
+            <div class="upload-zone" id="drop-zone">
+                <span>Arraste seu arquivo .glb ou .fbx aqui ou</span>
+                <label for="file-input">Procurar Arquivo</label>
+                <input type="file" id="file-input" accept=".glb,.fbx" onchange="handleFileSelect(event)">
+            </div>
+        </div>
+
+        <aside class="right-panel" id="right-panel">
+            <div class="panel-section-title">Estudo Solar</div>
+            <div class="prop-group">
+                <label>Orientação Solar / Horário <span id="val-sun-time">12:00</span></label>
+                <input type="range" id="prop-solar-pos" min="0" max="180" step="1" value="90" oninput="updateSolarOrbit()">
+            </div>
+            <div class="prop-group">
+                <label>Intensidade da Radiação (Sol)</label>
+                <input type="range" id="prop-light" min="0" max="5" step="0.1" value="2.0" oninput="updateLighting()">
+            </div>
+            <div class="prop-group">
+                <label>Luz de Rebatimento (Ambiente)</label>
+                <input type="range" id="prop-ambient" min="0" max="2" step="0.1" value="0.5" oninput="updateLighting()">
+            </div>
+
+            <div class="panel-section-title">Parâmetros do Ambiente</div>
+            <div class="prop-group">
+                <label>Fundo do Viewport</label>
+                <select id="prop-bg-color" class="prop-select" onchange="updateBackground()">
+                    <option value="#070a13" selected>Dark Slate Studio</option>
+                    <option value="#1e293b">Industrial Gray</option>
+                    <option value="#000000">True Black (High Contrast)</option>
+                    <option value="#d9efff">Cor do céu</option>
+                </select>
+            </div>
+            <div class="prop-group">
+                <label><input type="checkbox" id="prop-grid-toggle" checked onchange="toggleGrid()"> Exibir Grade de Referência</label>
+            </div>
+            <div class="prop-group">
+                <label>Malha de Terreno</label>
+                <select id="prop-ground-mesh" class="prop-select" onchange="updateGroundMesh()">
+                    <option value="none" selected>Nenhuma</option>
+                    <option value="mesh1">Malha 1 (Gramado)</option>
+                    <option value="mesh2">Malha 2 (Projeto)</option>
+                </select>
+            </div>
+
+            <div class="panel-section-title">Posicionamento da Maquete</div>
+            <div class="prop-group">
+                <label>Deslocamento lateral</label>
+                <div class="axis-row">
+                    <strong>X</strong>
+                    <input type="range" id="move-x" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
+                    <input type="number" class="prop-input" id="move-x-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
+                </div>
+            </div>
+            <div class="prop-group">
+                <label>Altura</label>
+                <div class="axis-row">
+                    <strong>Y</strong>
+                    <input type="range" id="move-y" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
+                    <input type="number" class="prop-input" id="move-y-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
+                </div>
+            </div>
+            <div class="prop-group">
+                <label>Profundidade</label>
+                <div class="axis-row">
+                    <strong>Z</strong>
+                    <input type="range" id="move-z" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
+                    <input type="number" class="prop-input" id="move-z-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
+                </div>
+            </div>
+            
+            <div class="prop-group">
+                <label>Rotação (Girar)</label>
+                <div class="axis-row">
+                    <strong>R</strong>
+                    <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
+                    <input type="number" class="prop-input" id="rot-y-num" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
+                </div>
+            </div>
+            <div class="prop-group">
+                <label>Escala (Tamanho)</label>
+                <div class="axis-row">
+                    <strong>S</strong>
+                    <input type="range" id="scale-m" min="0.1" max="5" step="0.05" value="1" oninput="syncScaleInput(this.value)">
+                    <input type="number" class="prop-input" id="scale-m-num" min="0.1" max="5" step="0.05" value="1" oninput="syncScaleInput(this.value)">
+                </div>
+            </div>
+
+            <div class="prop-group">
+                <button class="prop-button secondary" onclick="resetModelTransform()">Centralizar maquete</button>
+            </div>
+
+            <div class="panel-section-title">Dados Técnicos do Modelo</div>
+            <div class="info-card">
+                <div>Arquivo: <span id="info-name">Nenhum</span></div>
+                <div>Formato: <span id="info-type">-</span></div>
+                <div>Vértices: <span id="info-vertices">0</span></div>
+                <div>Polígonos: <span id="info-triangles">0</span></div>
+            </div>
+        </aside>
+    </div>
+
     <script>
-        let scene, camera, renderer, controls;
-        let dirLight, hemiLight, gridHelper, groundPlane;
-        
-        // Variáveis de controle do modelo carregado localmente
-        let currentModel = null;
-        let modelOffset = { x: 0, y: 0, z: 0 };
+        let scene, camera, renderer, controls, currentModel, gridHelper, shadowGround, satelliteGround;
+        let mainLight, ambientLight, fillLight;
+        let currentModelRadius = 50; 
+        const modelOffset = { x: 0, y: 0, z: 0 };
+        let modelBasePosition = { x: 0, y: 0, z: 0 };
         let modelScale = 1;
         let modelRotationY = 0;
 
-        function initEngine() {
-            const container = document.getElementById('canvas-container');
-            
+        const groundTextures = {
+            mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
+            mesh2: 'https://i.postimg.cc/tJs9mpdz/image.png'
+        };
+
+        function enterStudio() {
+            const welcome = document.getElementById('welcome-screen');
+            welcome.style.opacity = '0';
+            setTimeout(() => {
+                welcome.style.display = 'none';
+                initThreeEngine();
+            }, 500);
+        }
+
+        function toggleMobilePanel() {
+            const panel = document.getElementById('right-panel');
+            const btn = document.getElementById('toggle-panel-btn');
+            panel.classList.toggle('active');
+            if(panel.classList.contains('active')) {
+                btn.innerText = "✕";
+                btn.style.bottom = "calc(50vh + 16px)";
+            } else {
+                btn.innerText = "⚙️";
+                btn.style.bottom = "85px";
+            }
+        }
+
+        function initThreeEngine() {
+            const container = document.getElementById('three-container');
+            if(!container) return;
+
             scene = new THREE.Scene();
             scene.background = new THREE.Color('#070a13');
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(30, 20, 30);
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 5000);
+            camera.position.set(40, 40, 60);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 - 0.01; // Impede a câmera de passar para baixo do chão
+            controls.maxPolarAngle = Math.PI / 2 + 0.05; 
 
-            // Iluminação Básica do Cenário
-            hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5);
-            hemiLight.position.set(0, 50, 0);
-            scene.add(hemiLight);
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
 
-            dirLight = new THREE.DirectionalLight(0xfffdf2, 2.0);
-            dirLight.position.set(0, 20, 10);
-            dirLight.castShadow = true;
-            dirLight.shadow.camera.top = 30;
-            dirLight.shadow.camera.bottom = -30;
-            dirLight.shadow.camera.left = -30;
-            dirLight.shadow.camera.right = 30;
-            dirLight.shadow.camera.near = 0.1;
-            dirLight.shadow.camera.far = 150;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.bias = -0.0005;
-            scene.add(dirLight);
+            mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 2048; 
+            mainLight.shadow.mapSize.height = 2048;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 1000;
+            
+            setShadowFrustum(100);
+            scene.add(mainLight);
 
-            // Elementos de Ajuda do Cenário
-            gridHelper = new THREE.GridHelper(100, 100, 0x3b82f6, 0x222f4b);
-            gridHelper.position.y = -0.01;
+            fillLight = new THREE.DirectionalLight(0x94a3b8, 0.4);
+            fillLight.position.set(-50, 30, -50);
+            scene.add(fillLight);
+
+            gridHelper = new THREE.GridHelper(600, 120, '#3b82f6', '#334155');
+            gridHelper.position.y = -0.01; 
             scene.add(gridHelper);
 
-            // Criação do piso padrão intercambiável
-            const groundGeo = new THREE.PlaneGeometry(200, 200);
-            const groundMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 });
-            groundPlane = new THREE.Mesh(groundGeo, groundMat);
-            groundPlane.rotation.x = -Math.PI / 2;
-            groundPlane.position.y = -0.02;
-            groundPlane.receiveShadow = true;
-            scene.add(groundPlane);
-            groundPlane.visible = false; // Começa desativado por padrão
+            const groundGeo = new THREE.PlaneGeometry(2000, 2000);
+            const groundMat = new THREE.ShadowMaterial();
+            groundMat.opacity = 0.6; 
+            
+            shadowGround = new THREE.Mesh(groundGeo, groundMat);
+            shadowGround.rotation.x = -Math.PI / 2;
+            shadowGround.receiveShadow = true;
+            scene.add(shadowGround);
 
+            updateSolarOrbit();
             window.addEventListener('resize', onWindowResize);
+            setupDragAndDrop();
             animate();
+        }
+
+        function setShadowFrustum(size) {
+            mainLight.shadow.camera.left = -size;
+            mainLight.shadow.camera.right = size;
+            mainLight.shadow.camera.top = size;
+            mainLight.shadow.camera.bottom = -size;
+            mainLight.shadow.camera.updateProjectionMatrix();
         }
 
         function animate() {
@@ -353,239 +356,240 @@
         }
 
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // Funções de manipulação chamadas via gatilho de sincronização externa
-        function updateSolarOrbit(degrees) {
-            const rad = THREE.MathUtils.degToRad(degrees);
-            const radius = 40;
-            if(dirLight) {
-                dirLight.position.x = radius * Math.cos(rad);
-                dirLight.position.z = radius * Math.sin(rad);
+            const container = document.getElementById('three-container');
+            if (camera && renderer && container) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
             }
         }
 
-        function updateLighting(dirIntensity, ambientIntensity) {
-            if(dirLight) dirLight.intensity = parseFloat(dirIntensity);
-            if(hemiLight) hemiLight.intensity = parseFloat(ambientIntensity);
-        }
-
-        function updateBackground(hexColor) {
-            if(scene) scene.background.set(hexColor);
-        }
-
-        function toggleGrid(visible) {
-            if(gridHelper) gridHelper.visible = visible;
-        }
-
-        function updateGroundMesh(type) {
-            if(!groundPlane) return;
-            if(type === 'none') {
-                groundPlane.visible = false;
-            } else if(type === 'grid') {
-                groundPlane.visible = true;
-                groundPlane.material = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
-                groundPlane.receiveShadow = true;
-            } else if(type === 'shadow') {
-                groundPlane.visible = true;
-                groundPlane.material = new THREE.ShadowMaterial({ opacity: 0.4 });
-                groundPlane.receiveShadow = true;
+        function updateSolarOrbit() {
+            const angleDeg = parseFloat(document.getElementById('prop-solar-pos').value);
+            const textTime = document.getElementById('val-sun-time');
+            if (!textTime) return;
+            
+            if (angleDeg === 0 || angleDeg === 180) textTime.innerText = angleDeg === 0 ? "06:00 (Amanhecer)" : "18:00 (Ocaso)";
+            else if (angleDeg === 90) textTime.innerText = "12:00 (Zênite)";
+            else {
+                const hourCalc = 6 + (angleDeg / 180) * 12;
+                const hours = Math.floor(hourCalc);
+                const minutes = Math.floor((hourCalc - hours) * 60).toString().padStart(2, '0');
+                textTime.innerText = `${hours.toString().padStart(2, '0')}:${minutes}`;
             }
+
+            const angleRad = (angleDeg * Math.PI) / 180;
+            const orbitRadius = currentModelRadius * 4;
+
+            mainLight.position.x = Math.cos(angleRad) * orbitRadius;
+            mainLight.position.y = Math.sin(angleRad) * orbitRadius;
+            mainLight.position.z = (Math.cos(angleRad) * 0.3) * orbitRadius; 
+        }
+
+        function updateLighting() {
+            mainLight.intensity = parseFloat(document.getElementById('prop-light').value);
+            ambientLight.intensity = parseFloat(document.getElementById('prop-ambient').value);
+        }
+
+        function updateBackground() {
+            const color = document.getElementById('prop-bg-color').value;
+            if(scene) scene.background = new THREE.Color(color);
+            if(renderer) renderer.setClearColor(color, 1);
+        }
+
+        function updateGroundMesh() {
+            if (!scene) return;
+            const selectedOption = document.getElementById('prop-ground-mesh').value;
+
+            if (selectedOption === 'none') {
+                if (satelliteGround) { scene.remove(satelliteGround); satelliteGround = null; }
+                document.getElementById('hud-status').innerText = "Malha de terreno removida.";
+                return;
+            }
+
+            const textureUrl = groundTextures[selectedOption];
+            const labelMesh = selectedOption === 'mesh1' ? 'Malha 1 (Gramado)' : 'Malha 2 (Projeto)';
+            document.getElementById('hud-status').innerText = `Carregando ${labelMesh}...`;
+
+            const loader = new THREE.TextureLoader();
+            loader.load(textureUrl, (texture) => {
+                texture.colorSpace = THREE.SRGBColorSpace;
+                const groundSize = Math.max(currentModelRadius * 8, 800);
+
+                if (satelliteGround) {
+                    satelliteGround.material.map = texture;
+                    satelliteGround.material.needsUpdate = true;
+                } else {
+                    const material = new THREE.MeshLambertMaterial({ map: texture });
+                    const geometry = new THREE.PlaneGeometry(groundSize, groundSize);
+                    satelliteGround = new THREE.Mesh(geometry, material);
+                    satelliteGround.rotation.x = -Math.PI / 2;
+                    satelliteGround.position.y = -0.03;
+                    satelliteGround.receiveShadow = true;
+                    scene.add(satelliteGround);
+                }
+                document.getElementById('hud-status').innerText = `${labelMesh} aplicada!`;
+            }, undefined, () => {
+                document.getElementById('hud-status').innerText = `Erro ao carregar a ${labelMesh}.`;
+            });
+        }
+
+        function syncTransformInput(axis, value) {
+            const numericValue = Number(value) || 0;
+            const range = document.getElementById(`move-${axis}`);
+            const input = document.getElementById(`move-${axis}-num`);
+            if (range) range.value = numericValue;
+            if (input) input.value = numericValue;
+            modelOffset[axis] = numericValue;
+            updateModelTransform();
+        }
+
+        /* CORREÇÃO MOBILE: USANDO BLOB URLS SEGUROS */
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (extension !== 'glb' && extension !== 'fbx') {
+                document.getElementById('hud-status').innerText = "Use apenas .glb ou .fbx.";
+                return;
+            }
+            
+            document.getElementById('hud-status').innerText = `Processando [${file.name}]...`;
+            const blobURL = URL.createObjectURL(file);
+            
+            if (extension === 'glb') {
+                const loader = new THREE.GLTFLoader();
+                loader.load(blobURL, (gltf) => {
+                    injectModelIntoScene(gltf.scene, file.name, 'GLB / GLTF');
+                    URL.revokeObjectURL(blobURL);
+                }, undefined, () => {
+                    document.getElementById('hud-status').innerText = "Erro ao processar GLB no celular.";
+                });
+            } else if (extension === 'fbx') {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    try {
+                        const loader = new THREE.FBXLoader();
+                        const object = loader.parse(e.target.result, '');
+                        injectModelIntoScene(object, file.name, 'Autodesk FBX');
+                    } catch (err) {
+                        document.getElementById('hud-status').innerText = "Erro ao descriptografar nós do FBX.";
+                    }
+                    URL.revokeObjectURL(blobURL);
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('drop-zone');
+            if(!dropZone) return;
+            window.addEventListener('dragover', (e) => e.preventDefault());
+            window.addEventListener('drop', (e) => e.preventDefault());
+        }
+
+        function syncScaleInput(value) {
+            const numericValue = Math.max(0.1, Number(value) || 1);
+            const range = document.getElementById('scale-m');
+            const input = document.getElementById('scale-m-num');
+            if (range) range.value = numericValue;
+            if (input) input.value = numericValue;
+            modelScale = numericValue;
+            if (currentModel) currentModel.scale.set(modelScale, modelScale, modelScale);
+        }
+
+        function syncRotationInput(value) {
+            const numericValue = Number(value) || 0;
+            const range = document.getElementById('rot-y');
+            const input = document.getElementById('rot-y-num');
+            if (range) range.value = numericValue;
+            if (input) input.value = numericValue;
+            modelRotationY = numericValue;
+            if (currentModel) currentModel.rotation.y = THREE.MathUtils.degToRad(modelRotationY);
         }
 
         function updateModelTransform() {
-            if(currentModel) {
-                currentModel.position.set(modelOffset.x, modelOffset.y, modelOffset.z);
-            }
+            if (!currentModel) return;
+            currentModel.position.set(modelBasePosition.x + modelOffset.x, modelBasePosition.y + modelOffset.y, modelBasePosition.z + modelOffset.z);
         }
 
-        // Leitor de arquivos local (Não passa o binário ao Firebase, carrega localmente em cada tela)
-        document.getElementById('file-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        function resetModelTransform() {
+            ["x", "y", "z"].forEach((axis) => syncTransformInput(axis, 0));
+            syncScaleInput(1);
+            syncRotationInput(0);
+            if (currentModel) document.getElementById('hud-status').innerText = "Maquete restaurada.";
+        }
 
-            document.getElementById('loading-screen').style.opacity = '1';
-            document.getElementById('loading-screen').style.pointerEvents = 'auto';
-            document.getElementById('loading-text').innerText = "Carregando maquete 3D local...";
-
-            clearModel();
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const contents = event.target.result;
-                const loader = new THREE.GLTFLoader();
-                
-                loader.parse(contents, '', function(gltf) {
-                    currentModel = gltf.scene;
-                    
-                    // Configuração de sombras automáticas para a maquete importada
-                    currentModel.traverse(function(node) {
-                        if (node.isMesh) {
-                            node.castShadow = true;
-                            node.receiveShadow = true;
-                        }
-                    });
-
-                    // Aplica estados vigentes imediatamente para evitar pulos visuais
-                    currentModel.scale.set(modelScale, modelScale, modelScale);
-                    currentModel.rotation.y = THREE.MathUtils.degToRad(modelRotationY);
-                    currentModel.position.set(modelOffset.x, modelOffset.y, modelOffset.z);
-
-                    scene.add(currentModel);
-                    
-                    document.getElementById('loading-screen').style.opacity = '0';
-                    document.getElementById('loading-screen').style.pointerEvents = 'none';
-                }, function(error) {
-                    alert("Erro ao decodificar a maquete 3D. Certifique-se de usar .GLB ou .GLTF válidos.");
-                    document.getElementById('loading-screen').style.opacity = '0';
-                    document.getElementById('loading-screen').style.pointerEvents = 'none';
-                });
-            };
-            reader.readAsArrayBuffer(file);
-        });
+        function toggleGrid() {
+            const isChecked = document.getElementById('prop-grid-toggle').checked;
+            if(gridHelper) gridHelper.visible = isChecked;
+            if(shadowGround) shadowGround.visible = isChecked; 
+        }
 
         function clearModel() {
-            if(currentModel) {
-                scene.remove(currentModel);
-                currentModel = null;
-            }
+            if (currentModel && scene) { scene.remove(currentModel); currentModel = null; }
+            if (satelliteGround && scene) { scene.remove(satelliteGround); satelliteGround = null; }
+            modelBasePosition = { x: 0, y: 0, z: 0 };
+            resetModelTransform();
+            document.getElementById('prop-ground-mesh').value = 'none';
+            document.getElementById('hud-status').innerText = "Aguardando maquete (.glb, .fbx)...";
+            document.getElementById('info-name').innerText = "Nenhum";
+            document.getElementById('info-type').innerText = "-";
+            document.getElementById('info-vertices').innerText = "0";
+            document.getElementById('info-triangles').innerText = "0";
+            currentModelRadius = 50;
+            setShadowFrustum(100);
+            updateSolarOrbit();
+            if(controls) { controls.target.set(0, 0, 0); camera.position.set(40, 40, 60); }
         }
 
-        // Inicializa o ambiente gráfico assim que a janela carrega
-        window.onload = () => { initEngine(); };
-    </script>
+        function injectModelIntoScene(loadedObject, filename, typeLabel) {
+            if (currentModel && scene) scene.remove(currentModel);
+            currentModel = loadedObject;
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+            let vertexCount = 0;
+            let triangleCount = 0;
 
-        // SUA CONFIGURAÇÃO OFICIAL DO APP DO FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyDFP85eQsSJDrx-klldmjtHe2oEx1jzrns",
-            authDomain: "arquitetura-855d5.firebaseapp.com",
-            projectId: "arquitetura-855d5",
-            storageBucket: "arquitetura-855d5.firebasestorage.app",
-            messagingSenderId: "82859867262",
-            appId: "1:82859867262:web:cd5ef29765d57fdc5eec2f",
-            databaseURL: "https://arquitetura-855d5-default-rtdb.firebaseio.com"
-        };
+            currentModel.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;     
+                    node.receiveShadow = true;  
+                    if(node.geometry) {
+                        const geom = node.geometry;
+                        if(geom.attributes.position) vertexCount += geom.attributes.position.count;
+                        if(geom.index) triangleCount += geom.index.count / 3;
+                        else if(geom.attributes.position) triangleCount += geom.attributes.position.count / 3;
+                    }
+                }
+            });
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const syncRef = ref(db, 'sceneState');
+            document.getElementById('info-name').innerText = filename;
+            document.getElementById('info-type').innerText = typeLabel;
+            document.getElementById('info-vertices').innerText = vertexCount.toLocaleString();
+            document.getElementById('info-triangles').innerText = Math.floor(triangleCount).toLocaleString();
 
-        const defaultState = {
-            solarPos: 90, lightIntensity: 2.0, ambientIntensity: 0.5,
-            bgColor: "#070a13", gridVisible: true, groundMesh: "none",
-            posX: 0, posY: 0, posZ: 0, scale: 1, rotY: 0
-        };
+            const box = new THREE.Box3().setFromObject(currentModel);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
 
-        // Verifica estado inicial e remove tela de loading na primeira carga bem-sucedida
-        get(syncRef).then((snapshot) => {
-            if (!snapshot.exists()) {
-                set(syncRef, defaultState);
-            }
-            document.getElementById('loading-screen').style.opacity = '0';
-            document.getElementById('loading-screen').style.pointerEvents = 'none';
-        }).catch((err)=>{
-            console.error("Falha ao comunicar com Firebase. Verifique suas regras públicas de leitura/escrita.", err);
-            document.getElementById('loading-text').innerText = "Erro de Conexão com Firebase (Verifique as Rules).";
-        });
+            currentModelRadius = Math.max(size.x, size.y, size.z) || 1;
 
-        // Função Global vinculada à interface para salvar dados modificados
-        window.dbSave = function(key, value) {
-            let parsedValue = value;
-            if (value === true || value === false) {
-                parsedValue = value;
-            } else if(!isNaN(value) && value !== '') {
-                parsedValue = parseFloat(value);
-            }
-            update(syncRef, { [key]: parsedValue }).catch((e) => console.error("Erro ao enviar dados:", e));
-        };
-
-        window.triggerResetTransform = function() {
-            update(syncRef, { posX: 0, posY: 0, posZ: 0, scale: 1, rotY: 0 });
-        };
-
-        window.triggerClearModel = function() {
-            if(confirm("Deseja remover o modelo e limpar a cena em todas as telas conectadas?")){
-                clearModel();
-            }
-        };
-
-        // Escuta modificações de qualquer tela externa e sincroniza em tempo real com blindagem
-        onValue(syncRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-
-            // Sincronizar Iluminação
-            if(data.solarPos !== undefined) {
-                const el = document.getElementById('prop-solar-pos');
-                if(el && document.activeElement !== el) el.value = data.solarPos;
-                updateSolarOrbit(data.solarPos);
-            }
-            if(data.lightIntensity !== undefined) {
-                const el = document.getElementById('prop-light');
-                if(el && document.activeElement !== el) el.value = data.lightIntensity;
-            }
-            if(data.ambientIntensity !== undefined) {
-                const el = document.getElementById('prop-ambient');
-                if(el && document.activeElement !== el) el.value = data.ambientIntensity;
-            }
-            updateLighting(data.lightIntensity, data.ambientIntensity);
-
-            // Sincronizar Cenário
-            if(data.bgColor !== undefined) {
-                const el = document.getElementById('prop-bg-color');
-                if(el) el.value = data.bgColor;
-                updateBackground(data.bgColor);
-            }
-            if(data.gridVisible !== undefined) {
-                const el = document.getElementById('prop-grid-toggle');
-                if(el) el.checked = data.gridVisible;
-                toggleGrid(data.gridVisible);
-            }
-            if(data.groundMesh !== undefined) {
-                const el = document.getElementById('prop-ground-mesh');
-                if(el) el.value = data.groundMesh;
-                updateGroundMesh(data.groundMesh);
-            }
-
-            // Sincronizar Transformações (Com blindagem estrutural para evitar loops de entrada e quebras)
-            if(data.posX !== undefined) {
-                const r = document.getElementById('move-x'); const n = document.getElementById('move-x-num');
-                if(r && n && document.activeElement !== r && document.activeElement !== n) { r.value = data.posX; n.value = data.posX; }
-                modelOffset.x = data.posX;
-            }
-            if(data.posY !== undefined) {
-                const r = document.getElementById('move-y'); const n = document.getElementById('move-y-num');
-                if(r && n && document.activeElement !== r && document.activeElement !== n) { r.value = data.posY; n.value = data.posY; }
-                modelOffset.y = data.posY;
-            }
-            if(data.posZ !== undefined) {
-                const r = document.getElementById('move-z'); const n = document.getElementById('move-z-num');
-                if(r && n && document.activeElement !== r && document.activeElement !== n) { r.value = data.posZ; n.value = data.posZ; }
-                modelOffset.z = data.posZ;
-            }
+            currentModel.position.x += (currentModel.position.x - center.x);
+            currentModel.position.y += (currentModel.position.y - box.min.y);
+            currentModel.position.z += (currentModel.position.z - center.z);
+            modelBasePosition = { x: currentModel.position.x, y: currentModel.position.y, z: currentModel.position.z };
             
-            if(data.scale !== undefined) {
-                const r = document.getElementById('scale-m'); const n = document.getElementById('scale-m-num');
-                if(r && n && document.activeElement !== r && document.activeElement !== n) { r.value = data.scale; n.value = data.scale; }
-                modelScale = data.scale;
-                if(currentModel) currentModel.scale.set(modelScale, modelScale, modelScale);
-            }
-            if(data.rotY !== undefined) {
-                const r = document.getElementById('rot-y'); const n = document.getElementById('rot-y-num');
-                if(r && n && document.activeElement !== r && document.activeElement !== n) { r.value = data.rotY; n.value = data.rotY; }
-                modelRotationY = data.rotY;
-                if(currentModel) currentModel.rotation.y = THREE.MathUtils.degToRad(modelRotationY);
-            }
+            resetModelTransform();
+            scene.add(currentModel);
 
-            updateModelTransform();
-        });
+            setShadowFrustum(currentModelRadius * 1.5);
+            updateSolarOrbit();
+
+            camera.position.set(currentModelRadius * 2.2, currentModelRadius * 2.2, currentModelRadius * 2.2);
+            controls.target.set(0, currentModelRadius * 0.4, 0);
+            document.getElementById('hud-status').innerText = "Maquete importada com sucesso!";
+        }
     </script>
 </body>
 </html>
