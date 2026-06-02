@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Visualizador de modelos 3D Profissional</title>
     
+    <!-- Core do Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
+    <!-- Loaders de Formatos -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     
+    <!-- Bibliotecas de Descompactação Ultra-Rápida (Motores WebAssembly) -->
     <script src="https://cdn.jsdelivr.net/npm/meshoptimizer@0.18.1/meshopt_decoder.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/basis/basis_transcoder.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/KTX2Loader.js"></script>
@@ -126,7 +129,7 @@
 
     <div id="welcome-screen">
         <div class="login-card">
-            <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Arthur 3D Logo">
+            <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Logo">
             <h1 class="brand-title">Visualizador de modelos 3D</h1>
             <p class="brand-subtitle">developed by Arthur Willian</p>
             <button class="btn-enter" onclick="enterStudio()">Abrir visualizador</button>
@@ -304,7 +307,6 @@
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             container.appendChild(renderer.domElement);
 
-            // Inicializa o decodificador KTX2 para texturas otimizadas em GPU
             ktx2Loader = new THREE.KTX2Loader()
                 .setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/basis/')
                 .detectSupport(renderer);
@@ -453,47 +455,56 @@
             updateModelTransform();
         }
 
+        // CORREÇÃO CRÍTICA DO SISTEMA: Carregamento Binário via ArrayBuffer (Ignora Blobs com erro de rede)
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
             
             const extension = file.name.split('.').pop().toLowerCase();
             if (extension !== 'glb' && extension !== 'fbx') {
-                document.getElementById('hud-status').innerText = "Use apenas .glb ou .fbx.";
+                document.getElementById('hud-status').innerText = "Use apenas arquivos .glb ou .fbx.";
                 return;
             }
             
-            document.getElementById('hud-status').innerText = `Processando [${file.name}]...`;
-            const blobURL = URL.createObjectURL(file);
+            document.getElementById('hud-status').innerText = `Lendo bytes de [${file.name}]...`;
             
-            if (extension === 'glb') {
-                const loader = new THREE.GLTFLoader();
-                
-                // Engenharia igual à do gltf.report: Ativa Meshopt e KTX2 por WebAssembly
-                loader.setMeshoptDecoder(MeshoptDecoder);
-                loader.setKTX2Loader(ktx2Loader);
+            const reader = new FileReader();
+            
+            reader.onload = function (event) {
+                const arrayBuffer = event.target.result;
+                document.getElementById('hud-status').innerText = "Montando geometria 3D na GPU...";
 
-                loader.load(blobURL, (gltf) => {
-                    injectModelIntoScene(gltf.scene, file.name, 'GLB (Meshopt/KTX2 Ready)');
-                    URL.revokeObjectURL(blobURL);
-                }, undefined, (err) => {
-                    console.error(err);
-                    document.getElementById('hud-status').innerText = "Erro ao processar GLB no celular.";
-                });
-            } else if (extension === 'fbx') {
-                const reader = new FileReader();
-                reader.onload = function (e) {
+                if (extension === 'glb') {
+                    const loader = new THREE.GLTFLoader();
+                    loader.setMeshoptDecoder(MeshoptDecoder);
+                    loader.setKTX2Loader(ktx2Loader);
+
+                    // Força o parse direto dos bytes puros carregados na memória do celular
+                    loader.parse(arrayBuffer, '', (gltf) => {
+                        injectModelIntoScene(gltf.scene, file.name, 'GLB Otimizado (Memória Direta)');
+                    }, (err) => {
+                        console.error(err);
+                        document.getElementById('hud-status').innerText = "Falha crítica no decodificador Meshopt/GLB.";
+                    });
+
+                } else if (extension === 'fbx') {
                     try {
                         const loader = new THREE.FBXLoader();
-                        const object = loader.parse(e.target.result, '');
-                        injectModelIntoScene(object, file.name, 'Autodesk FBX');
+                        const object = loader.parse(arrayBuffer, '');
+                        injectModelIntoScene(object, file.name, 'Autodesk FBX (Memória Direta)');
                     } catch (err) {
-                        document.getElementById('hud-status').innerText = "Erro ao ler estrutura de nós do FBX.";
+                        console.error(err);
+                        document.getElementById('hud-status').innerText = "Erro ao processar os nós de animação do FBX.";
                     }
-                    URL.revokeObjectURL(blobURL);
-                };
-                reader.readAsArrayBuffer(file);
-            }
+                }
+            };
+
+            reader.onerror = function() {
+                document.getElementById('hud-status').innerText = "Erro físico de leitura do arquivo no celular.";
+            };
+
+            // Dispara o gatilho de leitura direta na RAM
+            reader.readAsArrayBuffer(file);
         }
 
         function setupDragAndDrop() {
