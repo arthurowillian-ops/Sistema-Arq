@@ -2,15 +2,13 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador de modelos 3D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visualizador de modelos 3D Multiusuário</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
 
     <style>
@@ -24,6 +22,7 @@
             --text-muted: #94a3b8;
             --border-color: #334155;
             --success: #22c55e;
+            --panel-width: 300px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
@@ -83,7 +82,7 @@
         #file-input { display: none; }
 
         /* PAINEL LATERAL DE PROPRIEDADES */
-        aside.right-panel { width: 300px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 24px; z-index: 50; overflow-y: auto; }
+        aside.right-panel { width: var(--panel-width); background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 24px; z-index: 50; overflow-y: auto; }
         .panel-section-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
         .prop-group { display: flex; flex-direction: column; gap: 8px; }
         .prop-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; }
@@ -103,46 +102,53 @@
         .info-card span { color: var(--text-main); }
 
         /* ==========================================================================
-           REGRAS DE ADAPTAÇÃO PARA CELULAR (HORIZONTAL / LANDSCAPE)
+           LEYOUT EXCLUSIVO PARA CELULAR EM HORIZONTAL (LANDSCAPE)
            ========================================================================== */
-        @media (max-width: 900px) {
-            header { height: 50px; padding: 0 12px; }
-            header .logo { font-size: 12px; }
-            header .logo span { display: none; }
-            .main-workspace { height: calc(100vh - 50px); flex-direction: column; }
-            
-            /* O painel lateral vira uma barra inferior horizontal com scroll de opções */
+        @media screen and (max-width: 932px) and (orientation: landscape) {
+            :root {
+                --panel-width: 240px; /* Reduz largura lateral para caber mais viewport */
+            }
+            header {
+                height: 45px;
+                padding: 0 12px;
+            }
+            .logo { font-size: 12px; }
+            .logo span { display: none; } /* Oculta detalhes do logo no mobile */
+            .btn-clear { padding: 4px 10px; font-size: 11px; }
+
+            .main-workspace {
+                height: calc(100vh - 45px);
+            }
             aside.right-panel {
-                width: 100%;
-                height: 140px;
-                flex-direction: row;
-                border-left: none;
-                border-top: 1px solid var(--border-color);
                 padding: 12px;
-                gap: 20px;
-                overflow-x: auto;
-                overflow-y: hidden;
+                gap: 14px;
             }
             .panel-section-title {
-                display: none; /* Esconde títulos longos para poupar espaço */
+                font-size: 9px;
+                padding-bottom: 4px;
             }
-            .prop-group {
-                min-width: 180px;
-                justify-content: center;
+            .prop-group label { font-size: 10px; }
+            .prop-select, .prop-input, .axis-row .prop-input {
+                padding: 6px;
+                font-size: 11px;
             }
             .axis-row {
-                grid-template-columns: 15px 1fr; /* Remove o input numérico no mobile */
+                grid-template-columns: 15px 1fr 45px;
+                gap: 4px;
             }
-            .axis-row .prop-input { display: none; }
-            .info-card { display: none; } /* Oculta dados de polígonos no celular */
             .upload-zone {
-                bottom: 10px;
                 padding: 8px 16px;
-                font-size: 11px;
-                width: 85%;
+                bottom: 10px;
+                width: 80%;
+                justify-content: center;
             }
-            .upload-zone span { display: none; } /* Encurta o texto do upload */
-            .hud-bar { top: 10px; left: 10px; padding: 6px 12px; font-size: 10px; }
+            .upload-zone span { display: none; } /* Deixa apenas o botão de procurar */
+            .hud-bar {
+                top: 10px; left: 10px;
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+            .info-card { display: none; } /* Esconde metadados pesados na tela do celular */
         }
     </style>
 </head>
@@ -151,7 +157,7 @@
     <div id="welcome-screen">
         <div class="login-card">
             <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Arthur 3D Logo">
-            <h1 class="brand-title">Visualizador de modelos 3D</h1>
+            <h1 class="brand-title">Visualizador 3D Realtime</h1>
             <p class="brand-subtitle">developed by Arthur Willian</p>
             <button class="btn-enter" onclick="enterStudio()">Abrir visualizador</button>
         </div>
@@ -160,7 +166,7 @@
     <header>
         <div class="logo">Visualizador 3D <span>Maquetes e estudo solar</span></div>
         <div>
-            <button class="btn-clear" onclick="clearModel()">Resetar Cena</button>
+            <button class="btn-clear" onclick="triggerClearModel()">Resetar Cena</button>
         </div>
     </header>
 
@@ -177,87 +183,90 @@
         </div>
 
         <aside class="right-panel">
+            <div class="panel-section-title">Estudo Solar</div>
             <div class="prop-group">
-                <label>Orientação Solar <span id="val-sun-time">12:00</span></label>
-                <input type="range" id="prop-solar-pos" min="0" max="180" step="1" value="90" oninput="updateSolarOrbit()">
+                <label>Orientação Solar / Horário <span id="val-sun-time">12:00</span></label>
+                <input type="range" id="prop-solar-pos" min="0" max="180" step="1" value="90" oninput="dbSave('solarPos', this.value)">
             </div>
             <div class="prop-group">
-                <label>Intensidade (Sol)</label>
-                <input type="range" id="prop-light" min="0" max="5" step="0.1" value="2.0" oninput="updateLighting()">
+                <label>Intensidade da Radiação (Sol)</label>
+                <input type="range" id="prop-light" min="0" max="5" step="0.1" value="2.0" oninput="dbSave('lightIntensity', this.value)">
             </div>
             <div class="prop-group">
-                <label>Ambiente</label>
-                <input type="range" id="prop-ambient" min="0" max="2" step="0.1" value="0.5" oninput="updateLighting()">
+                <label>Luz de Rebatimento (Ambiente)</label>
+                <input type="range" id="prop-ambient" min="0" max="2" step="0.1" value="0.5" oninput="dbSave('ambientIntensity', this.value)">
             </div>
 
+            <div class="panel-section-title">Parâmetros do Ambiente</div>
             <div class="prop-group">
                 <label>Fundo do Viewport</label>
-                <select id="prop-bg-color" class="prop-select" onchange="updateBackground()">
+                <select id="prop-bg-color" class="prop-select" onchange="dbSave('bgColor', this.value)">
                     <option value="#070a13" selected>Dark Slate Studio</option>
                     <option value="#1e293b">Industrial Gray</option>
-                    <option value="#000000">True Black</option>
+                    <option value="#000000">True Black (High Contrast)</option>
                     <option value="#d9efff">Cor do céu</option>
                 </select>
             </div>
-            <div class="prop-group" style="flex-direction:row; align-items:center; gap:5px;">
-                <input type="checkbox" id="prop-grid-toggle" checked onchange="toggleGrid()"> 
-                <label for="prop-grid-toggle">Exibir Grade</label>
+            <div class="prop-group">
+                <label><input type="checkbox" id="prop-grid-toggle" checked onchange="dbSave('gridVisible', this.checked)"> Exibir Grade de Referência</label>
             </div>
             <div class="prop-group">
                 <label>Malha de Terreno</label>
-                <select id="prop-ground-mesh" class="prop-select" onchange="updateGroundMesh()">
+                <select id="prop-ground-mesh" class="prop-select" onchange="dbSave('groundMesh', this.value)">
                     <option value="none" selected>Nenhuma</option>
                     <option value="mesh1">Malha 1 (Gramado)</option>
                     <option value="mesh2">Malha 2 (Projeto)</option>
                 </select>
             </div>
 
+            <div class="panel-section-title">Posicionamento da Maquete</div>
             <div class="prop-group">
-                <label>Laterais (X)</label>
+                <label>Deslocamento lateral</label>
                 <div class="axis-row">
                     <strong>X</strong>
-                    <input type="range" id="move-x" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
-                    <input type="number" class="prop-input" id="move-x-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
+                    <input type="range" id="move-x" min="-500" max="500" step="1" value="0" oninput="dbSave('posX', this.value)">
+                    <input type="number" class="prop-input" id="move-x-num" min="-500" max="500" step="1" value="0" oninput="dbSave('posX', this.value)">
                 </div>
             </div>
             <div class="prop-group">
-                <label>Altura (Y)</label>
+                <label>Altura</label>
                 <div class="axis-row">
                     <strong>Y</strong>
-                    <input type="range" id="move-y" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
-                    <input type="number" class="prop-input" id="move-y-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
+                    <input type="range" id="move-y" min="-500" max="500" step="1" value="0" oninput="dbSave('posY', this.value)">
+                    <input type="number" class="prop-input" id="move-y-num" min="-500" max="500" step="1" value="0" oninput="dbSave('posY', this.value)">
                 </div>
             </div>
             <div class="prop-group">
-                <label>Profundidade (Z)</label>
+                <label>Profundidade</label>
                 <div class="axis-row">
                     <strong>Z</strong>
-                    <input type="range" id="move-z" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
-                    <input type="number" class="prop-input" id="move-z-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
+                    <input type="range" id="move-z" min="-500" max="500" step="1" value="0" oninput="dbSave('posZ', this.value)">
+                    <input type="number" class="prop-input" id="move-z-num" min="-500" max="500" step="1" value="0" oninput="dbSave('posZ', this.value)">
                 </div>
             </div>
             
             <div class="prop-group">
-                <label>Rotação (R)</label>
+                <label>Rotação (Girar)</label>
                 <div class="axis-row">
                     <strong>R</strong>
-                    <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
-                    <input type="number" class="prop-input" id="rot-y-num" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
+                    <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="dbSave('rotY', this.value)">
+                    <input type="number" class="prop-input" id="rot-y-num" min="0" max="360" step="1" value="0" oninput="dbSave('rotY', this.value)">
                 </div>
             </div>
             <div class="prop-group">
-                <label>Escala (S)</label>
+                <label>Escala (Tamanho)</label>
                 <div class="axis-row">
                     <strong>S</strong>
-                    <input type="range" id="scale-m" min="0.1" max="5" step="0.05" value="1" oninput="syncScaleInput(this.value)">
-                    <input type="number" class="prop-input" id="scale-m-num" min="0.1" max="5" step="0.05" value="1" oninput="syncScaleInput(this.value)">
+                    <input type="range" id="scale-m" min="0.1" max="5" step="0.05" value="1" oninput="dbSave('scale', this.value)">
+                    <input type="number" class="prop-input" id="scale-m-num" min="0.1" max="5" step="0.05" value="1" oninput="dbSave('scale', this.value)">
                 </div>
             </div>
 
             <div class="prop-group">
-                <button class="prop-button secondary" onclick="resetModelTransform()">Centralizar</button>
+                <button class="prop-button secondary" onclick="triggerResetTransform()">Centralizar maquete</button>
             </div>
 
+            <div class="panel-section-title">Dados Técnicos do Modelo</div>
             <div class="info-card">
                 <div>Arquivo: <span id="info-name">Nenhum</span></div>
                 <div>Formato: <span id="info-type">-</span></div>
@@ -269,7 +278,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDFP85eQsSJDrx-klldmjtHe2oEx1jzrns",
@@ -277,73 +286,99 @@
             projectId: "arquitetura-855d5",
             storageBucket: "arquitetura-855d5.firebasestorage.app",
             messagingSenderId: "82859867262",
-            appId: "1:82859867262:web:cd5ef29765d57fdc5eec2f"
+            appId: "1:82859867262:web:cd5ef29765d57fdc5eec2f",
+            databaseURL: "https://arquitetura-855d5-default-rtdb.firebaseio.com" // Adicionado para garantir conexão com Realtime Database
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const syncRef = ref(db, 'sceneState');
 
-        // Disponibiliza as funções do Firebase globalmente para os inputs HTML usarem
-        window.saveConfigToFirebase = function() {
-            if (!currentLoadedName) return;
-            
-            // Higieniza o nome do arquivo removendo caracteres proibidos pelo Firebase (. # $ [ ] / )
-            const fileKey = currentLoadedName.replace(/[\.\#\$\[\]\/]/g, "_");
-
-            set(ref(db, 'models/' + fileKey), {
-                offsetX: modelOffset.x,
-                offsetY: modelOffset.y,
-                offsetZ: modelOffset.z,
-                scale: modelScale,
-                rotationY: modelRotationY,
-                solarPos: document.getElementById('prop-solar-pos').value,
-                lightIntensity: document.getElementById('prop-light').value,
-                ambientIntensity: document.getElementById('prop-ambient').value,
-                bgColor: document.getElementById('prop-bg-color').value,
-                groundMesh: document.getElementById('prop-ground-mesh').value
-            }).then(() => {
-                document.getElementById('hud-status').innerText = "Configurações salvas na nuvem.";
-            }).catch((error) => {
-                console.error("Erro ao salvar:", error);
-            });
+        // Expõe funções para o escopo global (necessário para os inputs HTML `oninput/onclick`)
+        window.dbSave = function(key, value) {
+            let parsedValue = value;
+            if(!isNaN(value) && typeof value !== 'boolean' && value !== '') {
+                parsedValue = parseFloat(value);
+            }
+            update(syncRef, { [key]: parsedValue });
         };
 
-        window.loadConfigFromFirebase = function(filename) {
-            const fileKey = filename.replace(/[\.\#\$\[\]\/]/g, "_");
-            const dbRef = ref(db);
-            
-            get(child(dbRef, `models/${fileKey}`)).then((snapshot) => {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    
-                    // Aplica transformações estruturais
-                    syncTransformInput('x', data.offsetX ?? 0);
-                    syncTransformInput('y', data.offsetY ?? 0);
-                    syncTransformInput('z', data.offsetZ ?? 0);
-                    syncScaleInput(data.scale ?? 1);
-                    syncRotationInput(data.rotationY ?? 0);
-
-                    // Aplica iluminação e ambiente
-                    document.getElementById('prop-solar-pos').value = data.solarPos ?? 90;
-                    document.getElementById('prop-light').value = data.lightIntensity ?? 2.0;
-                    document.getElementById('prop-ambient').value = data.ambientIntensity ?? 0.5;
-                    document.getElementById('prop-bg-color').value = data.bgColor ?? "#070a13";
-                    document.getElementById('prop-ground-mesh').value = data.groundMesh ?? "none";
-
-                    // Atualiza o motor gráfico baseado nos novos inputs
-                    updateSolarOrbit();
-                    updateLighting();
-                    updateBackground();
-                    updateGroundMesh();
-
-                    document.getElementById('hud-status').innerText = `Configuração de [${filename}] recuperada do Firebase!`;
-                } else {
-                    document.getElementById('hud-status').innerText = "Nenhum ajuste anterior salvo para este modelo.";
-                }
-            }).catch((error) => {
-                console.error(error);
-            });
+        window.triggerResetTransform = function() {
+            update(syncRef, { posX: 0, posY: 0, posZ: 0, scale: 1, rotY: 0 });
         };
+
+        window.triggerClearModel = function() {
+            if(confirm("Isso irá resetar as configurações de todos os usuários conectados. Continuar?")){
+                set(syncRef, {
+                    solarPos: 90, lightIntensity: 2.0, ambientIntensity: 0.5,
+                    bgColor: "#070a13", gridVisible: true, groundMesh: "none",
+                    posX: 0, posY: 0, posZ: 0, scale: 1, rotY: 0
+                });
+                clearModel();
+            }
+        };
+
+        // Ouvinte em tempo real do Firebase: Atualiza interface e motor Three.js ao mudar em qualquer aparelho
+        onValue(syncRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            // Sincronizar Iluminação e Sol
+            if(data.solarPos !== undefined) {
+                document.getElementById('prop-solar-pos').value = data.solarPos;
+                updateSolarOrbit(data.solarPos);
+            }
+            if(data.lightIntensity !== undefined && data.ambientIntensity !== undefined) {
+                document.getElementById('prop-light').value = data.lightIntensity;
+                document.getElementById('prop-ambient').value = data.ambientIntensity;
+                updateLighting(data.lightIntensity, data.ambientIntensity);
+            }
+
+            // Sincronizar Ambiente
+            if(data.bgColor !== undefined) {
+                document.getElementById('prop-bg-color').value = data.bgColor;
+                updateBackground(data.bgColor);
+            }
+            if(data.gridVisible !== undefined) {
+                document.getElementById('prop-grid-toggle').checked = data.gridVisible;
+                toggleGrid(data.gridVisible);
+            }
+            if(data.groundMesh !== undefined) {
+                document.getElementById('prop-ground-mesh').value = data.groundMesh;
+                updateGroundMesh(data.groundMesh);
+            }
+
+            // Sincronizar Transformações (X, Y, Z, R, S)
+            if(data.posX !== undefined) {
+                document.getElementById('move-x').value = data.posX;
+                document.getElementById('move-x-num').value = data.posX;
+                modelOffset.x = data.posX;
+            }
+            if(data.posY !== undefined) {
+                document.getElementById('move-y').value = data.posY;
+                document.getElementById('move-y-num').value = data.posY;
+                modelOffset.y = data.posY;
+            }
+            if(data.posZ !== undefined) {
+                document.getElementById('move-z').value = data.posZ;
+                document.getElementById('move-z-num').value = data.posZ;
+                modelOffset.z = data.posZ;
+            }
+            if(data.scale !== undefined) {
+                document.getElementById('scale-m').value = data.scale;
+                document.getElementById('scale-m-num').value = data.scale;
+                modelScale = data.scale;
+                if(currentModel) currentModel.scale.set(modelScale, modelScale, modelScale);
+            }
+            if(data.rotY !== undefined) {
+                document.getElementById('rot-y').value = data.rotY;
+                document.getElementById('rot-y-num').value = data.rotY;
+                modelRotationY = data.rotY;
+                if(currentModel) currentModel.rotation.y = THREE.MathUtils.degToRad(modelRotationY);
+            }
+
+            updateModelTransform();
+        });
     </script>
 
     <script>
@@ -354,7 +389,6 @@
         let modelBasePosition = { x: 0, y: 0, z: 0 };
         let modelScale = 1;
         let modelRotationY = 0;
-        let currentLoadedName = ""; // Armazena o nome do arquivo atual
 
         const groundTextures = {
             mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
@@ -399,9 +433,8 @@
 
             mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
             mainLight.castShadow = true;
-            
-            mainLight.shadow.mapSize.width = 4096;
-            mainLight.shadow.mapSize.height = 4096;
+            mainLight.shadow.mapSize.width = 2048; // Otimizado de 4096 para rodar bem em celulares
+            mainLight.shadow.mapSize.height = 2048;
             mainLight.shadow.camera.near = 0.5;
             mainLight.shadow.camera.far = 1000;
             
@@ -424,8 +457,6 @@
             shadowGround.rotation.x = -Math.PI / 2;
             shadowGround.receiveShadow = true;
             scene.add(shadowGround);
-
-            updateSolarOrbit();
 
             window.addEventListener('resize', onWindowResize);
             setupDragAndDrop();
@@ -455,130 +486,94 @@
             }
         }
 
-        function updateSolarOrbit() {
-            const angleDeg = parseFloat(document.getElementById('prop-solar-pos').value);
+        function updateSolarOrbit(angleDeg) {
+            if(!mainLight) return;
+            const deg = angleDeg !== undefined ? angleDeg : parseFloat(document.getElementById('prop-solar-pos').value);
+            
             const textTime = document.getElementById('val-sun-time');
-            if(!textTime) return;
-
-            if (angleDeg === 0 || angleDeg === 180) textTime.innerText = angleDeg === 0 ? "06:00 (Amanhecer)" : "18:00 (Ocaso)";
-            else if (angleDeg === 90) textTime.innerText = "12:00 (Zênite)";
+            if (deg === 0 || deg === 180) textTime.innerText = deg === 0 ? "06:00 (Amanhecer)" : "18:00 (Ocaso)";
+            else if (deg === 90) textTime.innerText = "12:00 (Zênite)";
             else {
-                const hourCalc = 6 + (angleDeg / 180) * 12;
+                const hourCalc = 6 + (deg / 180) * 12;
                 const hours = Math.floor(hourCalc);
                 const minutes = Math.floor((hourCalc - hours) * 60).toString().padStart(2, '0');
                 textTime.innerText = `${hours.toString().padStart(2, '0')}:${minutes}`;
             }
 
-            const angleRad = (angleDeg * Math.PI) / 180;
+            const angleRad = (deg * Math.PI) / 180;
             const orbitRadius = currentModelRadius * 4;
 
             mainLight.position.x = Math.cos(angleRad) * orbitRadius;
             mainLight.position.y = Math.sin(angleRad) * orbitRadius;
             mainLight.position.z = (Math.cos(angleRad) * 0.3) * orbitRadius; 
-            
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
-        function updateLighting() {
-            mainLight.intensity = parseFloat(document.getElementById('prop-light').value);
-            ambientLight.intensity = parseFloat(document.getElementById('prop-ambient').value);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
+        function updateLighting(mainInt, ambInt) {
+            if(!mainLight || !ambientLight) return;
+            mainLight.intensity = mainInt !== undefined ? mainInt : parseFloat(document.getElementById('prop-light').value);
+            ambientLight.intensity = ambInt !== undefined ? ambInt : parseFloat(document.getElementById('prop-ambient').value);
         }
 
-        function updateBackground() {
-            const color = document.getElementById('prop-bg-color').value;
-            if(scene) scene.background = new THREE.Color(color);
-            if(renderer) renderer.setClearColor(color, 1);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
+        function updateBackground(colorHex) {
+            if(!scene || !renderer) return;
+            const color = colorHex !== undefined ? colorHex : document.getElementById('prop-bg-color').value;
+            scene.background = new THREE.Color(color);
+            renderer.setClearColor(color, 1);
         }
 
-        function updateGroundMesh() {
+        function updateGroundMesh(selectedOption) {
             if (!scene) return;
-            const selectedOption = document.getElementById('prop-ground-mesh').value;
+            const option = selectedOption !== undefined ? selectedOption : document.getElementById('prop-ground-mesh').value;
 
-            if (selectedOption === 'none') {
+            if (option === 'none') {
                 if (satelliteGround) { scene.remove(satelliteGround); satelliteGround = null; }
                 document.getElementById('hud-status').innerText = "Malha de terreno removida.";
                 return;
             }
 
-            const textureUrl = groundTextures[selectedOption];
+            const textureUrl = groundTextures[option];
             const loader = new THREE.TextureLoader();
             loader.load(textureUrl, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
-                const groundSize = Math.max(currentModelRadius * 8, 800);
-
                 if (satelliteGround) {
                     satelliteGround.material.map = texture;
                     satelliteGround.material.needsUpdate = true;
                 } else {
                     const material = new THREE.MeshLambertMaterial({ map: texture });
-                    const geometry = new THREE.PlaneGeometry(groundSize, groundSize);
+                    const geometry = new THREE.PlaneGeometry(800, 800);
                     satelliteGround = new THREE.Mesh(geometry, material);
                     satelliteGround.rotation.x = -Math.PI / 2;
                     satelliteGround.position.y = -0.03;
                     satelliteGround.receiveShadow = true;
                     scene.add(satelliteGround);
                 }
-                if(window.saveConfigToFirebase) window.saveConfigToFirebase();
             });
-        }
-
-        function syncTransformInput(axis, value) {
-            const numericValue = Number(value) || 0;
-            const range = document.getElementById(`move-${axis}`);
-            const input = document.getElementById(`move-${axis}-num`);
-            if (range) range.value = numericValue;
-            if (input) input.value = numericValue;
-            modelOffset[axis] = numericValue;
-            updateModelTransform();
-        }
-
-        function syncScaleInput(value) {
-            const numericValue = Math.max(0.1, Number(value) || 1);
-            const range = document.getElementById('scale-m');
-            const input = document.getElementById('scale-m-num');
-            if (range) range.value = numericValue;
-            if (input) input.value = numericValue;
-            modelScale = numericValue;
-            if (currentModel) currentModel.scale.set(modelScale, modelScale, modelScale);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function syncRotationInput(value) {
-            const numericValue = Number(value) || 0;
-            const range = document.getElementById('rot-y');
-            const input = document.getElementById('rot-y-num');
-            if (range) range.value = numericValue;
-            if (input) input.value = numericValue;
-            modelRotationY = numericValue;
-            if (currentModel) currentModel.rotation.y = THREE.MathUtils.degToRad(modelRotationY);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateModelTransform() {
             if (!currentModel) return;
             currentModel.position.set(modelBasePosition.x + modelOffset.x, modelBasePosition.y + modelOffset.y, modelBasePosition.z + modelOffset.z);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
-        function resetModelTransform() {
-            ["x", "y", "z"].forEach((axis) => syncTransformInput(axis, 0));
-            syncScaleInput(1);
-            syncRotationInput(0);
-        }
-
-        function toggleGrid() {
-            const isChecked = document.getElementById('prop-grid-toggle').checked;
-            if(gridHelper) gridHelper.visible = isChecked;
-            if(shadowGround) shadowGround.visible = isChecked; 
+        function toggleGrid(visible) {
+            if(!gridHelper) return;
+            const isChecked = visible !== undefined ? visible : document.getElementById('prop-grid-toggle').checked;
+            gridHelper.visible = isChecked;
+            shadowGround.visible = isChecked; 
         }
 
         function clearModel() {
             if (currentModel && scene) { scene.remove(currentModel); currentModel = null; }
-            currentLoadedName = "";
-            resetModelTransform();
+            if (satelliteGround && scene) { scene.remove(satelliteGround); satelliteGround = null; }
+            modelBasePosition = { x: 0, y: 0, z: 0 };
             document.getElementById('hud-status').innerText = "Aguardando importação de maquete (.glb, .fbx)...";
+            document.getElementById('info-name').innerText = "Nenhum";
+            document.getElementById('info-type').innerText = "-";
+            document.getElementById('info-vertices').innerText = "0";
+            document.getElementById('info-triangles').innerText = "0";
+            currentModelRadius = 50;
+            setShadowFrustum(100);
+            if(controls) { controls.target.set(0, 0, 0); camera.position.set(40, 40, 60); }
         }
 
         function handleFileSelect(e) {
@@ -600,12 +595,11 @@
 
         function processUploadedFile(file) {
             const extension = file.name.split('.').pop().toLowerCase();
-            if (extension !== 'glb' && extension !== 'fbx') return;
-
-            currentLoadedName = file.name;
-            document.getElementById('info-name').innerText = file.name;
-            document.getElementById('info-type').innerText = extension.toUpperCase();
-
+            if (extension !== 'glb' && extension !== 'fbx') {
+                document.getElementById('hud-status').innerText = "Erro: Use apenas .glb ou .fbx.";
+                return;
+            }
+            document.getElementById('hud-status').innerText = `Carregando [${file.name}]...`;
             const reader = new FileReader();
             reader.onload = function (e) {
                 const arrayBuffer = e.target.result;
@@ -617,21 +611,33 @@
 
         function parseGLB(buffer, filename) {
             const loader = new THREE.GLTFLoader();
-            loader.parse(buffer, '', (gltf) => { injectModelIntoScene(gltf.scene, filename); });
+            loader.parse(buffer, '', (gltf) => {
+                injectModelIntoScene(gltf.scene, filename, 'GLB / GLTF');
+            }, (err) => { document.getElementById('hud-status').innerText = "Erro ao ler GLB."; });
         }
 
         function parseFBX(buffer, filename) {
             const loader = new THREE.FBXLoader();
-            const object = loader.parse(buffer, '');
-            injectModelIntoScene(object, filename);
+            try {
+                const object = loader.parse(buffer, '');
+                injectModelIntoScene(object, filename, 'Autodesk FBX');
+            } catch (err) { document.getElementById('hud-status').innerText = "Erro ao ler FBX."; }
         }
 
-        function injectModelIntoScene(loadedObject, filename) {
+        function injectModelIntoScene(loadedObject, filename, typeLabel) {
             if (currentModel && scene) scene.remove(currentModel);
             currentModel = loadedObject;
 
+            let vertexCount = 0; let triangleCount = 0;
             currentModel.traverse((node) => {
-                if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
+                if (node.isMesh) {
+                    node.castShadow = true; node.receiveShadow = true;
+                    if(node.geometry) {
+                        const geom = node.geometry;
+                        if(geom.attributes.position) vertexCount += geom.attributes.position.count;
+                        if(geom.index) triangleCount += geom.index.count / 3;
+                    }
+                }
             });
 
             const box = new THREE.Box3().setFromObject(currentModel);
@@ -645,10 +651,15 @@
             modelBasePosition = { x: currentModel.position.x, y: currentModel.position.y, z: currentModel.position.z };
             
             scene.add(currentModel);
-            setShadowFrustum(currentModelRadius * 1.5);
-            
-            // Tenta buscar as configurações salvas no Firebase para este arquivo específico
-            if(window.loadConfigFromFirebase) window.loadConfigFromFirebase(filename);
+            setShadowFrustum(currentModelRadius * 2);
+            updateSolarOrbit();
+
+            document.getElementById('info-name').innerText = filename;
+            document.getElementById('info-type').innerText = typeLabel;
+            document.getElementById('info-vertices').innerText = vertexCount.toLocaleString();
+            document.getElementById('info-triangles').innerText = Math.floor(triangleCount).toLocaleString();
+            document.getElementById('hud-status').innerText = "Maquete renderizada com sucesso.";
+            updateModelTransform();
         }
     </script>
 </body>
