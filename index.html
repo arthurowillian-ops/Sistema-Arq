@@ -249,7 +249,6 @@
                     <option value="none" selected>Nenhuma</option>
                     <option value="mesh1">Malha 1 (Gramado)</option>
                     <option value="mesh2">Malha 2 (Projeto)</option>
-                    <option value="mesh3">Malha 3</option>
                 </select>
             </div>
 
@@ -320,8 +319,7 @@
 
         const groundTextures = {
             mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
-            mesh2: 'https://i.postimg.cc/tJs9mpdz/image.png',
-            mesh3: 'https://i.postimg.cc/02981Fgt/Minimalist-Business-Card-(2).png'
+            mesh2: 'https://i.postimg.cc/02981Fgt/Minimalist-Business-Card-(2).png'
         };
 
         function enterStudio() {
@@ -639,101 +637,84 @@
         }
 
         function updateSolarOrbit() {
-            const angle = document.getElementById('prop-solar-pos').value;
-            const rad = THREE.MathUtils.degToRad(angle);
+            const solarPos = document.getElementById('prop-solar-pos').value;
+            const rad = THREE.MathUtils.degToRad(solarPos);
             
-            // Reposiciona o Sol baseado no slider orbital (Movimento Leste-Oeste)
+            // Simulação simples de órbita solar circular
             const radius = 300;
-            mainLight.position.x = radius * Math.cos(rad);
-            mainLight.position.y = radius * Math.sin(rad);
-            mainLight.position.z = 100; // Leve inclinação lateral permanente
-
-            // Transforma o ângulo visual em formato de relógio 24h para o HUD
-            const totalMinutes = Math.round((angle / 180) * 12 * 60) + (6 * 60); // Inicia às 06:00 e termina às 18:00
-            const hours = Math.floor(totalMinutes / 60) % 24;
-            const minutes = Math.floor(totalMinutes % 60);
-            document.getElementById('val-sun-time').innerText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            const x = radius * Math.cos(rad);
+            const y = radius * Math.sin(rad);
             
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
+            if (mainLight) {
+                mainLight.position.set(x, y, x * 0.5);
+            }
+
+            // Atualiza exibição de "Horas" aproximada baseado no slider (0 a 180 graus)
+            const hours = Math.floor((solarPos / 180) * 12) + 6; // Das 6h às 18h
+            const formattedTime = `${hours.toString().padStart(2, '0')}:00`;
+            document.getElementById('val-sun-time').innerText = formattedTime;
         }
 
         function updateLighting() {
-            const sunIntensity = parseFloat(document.getElementById('prop-light').value);
-            const ambientIntensity = parseFloat(document.getElementById('prop-ambient').value);
-            
-            if(mainLight) mainLight.intensity = sunIntensity;
-            if(ambientLight) ambientLight.intensity = ambientIntensity;
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
+            const lightVal = document.getElementById('prop-light').value;
+            const ambientVal = document.getElementById('prop-ambient').value;
+            if (mainLight) mainLight.intensity = parseFloat(lightVal);
+            if (ambientLight) ambientLight.intensity = parseFloat(ambientVal);
         }
 
         function updateBackground() {
             const colorHex = document.getElementById('prop-bg-color').value;
-            if(scene) scene.background.set(colorHex);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
+            if (scene) scene.background.set(colorHex);
         }
 
         function toggleGrid() {
-            const show = document.getElementById('prop-grid-toggle').checked;
-            if(gridHelper) gridHelper.visible = show;
+            const isChecked = document.getElementById('prop-grid-toggle').checked;
+            if (gridHelper) gridHelper.visible = isChecked;
         }
 
         function updateGroundMesh() {
-            const selected = document.getElementById('prop-ground-mesh').value;
-
+            const selectValue = document.getElementById('prop-ground-mesh').value;
+            
             if (satelliteGround) {
                 scene.remove(satelliteGround);
                 satelliteGround = null;
             }
 
-            if (selected === 'none') {
-                if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-                return;
-            }
+            if (selectValue === 'none') return;
 
-            const textureUrl = groundTextures[selected];
+            const textureUrl = groundTextures[selectValue];
             const textureLoader = new THREE.TextureLoader();
             
-            document.getElementById('hud-status').innerText = "Carregando textura de terreno...";
-
             textureLoader.load(textureUrl, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 
-                // Configuração para repetir caso necessário
-                texture.wrapS = THREE.RepeatWrapping;
-                texture.wrapT = THREE.RepeatWrapping;
-
-                const geo = new THREE.PlaneGeometry(800, 800);
-                const mat = new THREE.MeshStandardMaterial({ 
+                // Configuração para evitar repetições borradas
+                texture.wrapS = THREE.ClampToEdgeWrapping;
+                texture.wrapT = THREE.ClampToEdgeWrapping;
+                
+                const satelliteGeo = new THREE.PlaneGeometry(800, 800);
+                const satelliteMat = new THREE.MeshStandardMaterial({ 
                     map: texture, 
                     roughness: 0.8,
                     metalness: 0.1
                 });
                 
-                satelliteGround = new THREE.Mesh(geo, mat);
+                satelliteGround = new THREE.Mesh(satelliteGeo, satelliteMat);
                 satelliteGround.rotation.x = -Math.PI / 2;
-                satelliteGround.position.y = -0.1; // Senta logo abaixo do grid e da sombra
+                satelliteGround.position.y = -0.1; // Logo abaixo da grade e da sombra
                 satelliteGround.receiveShadow = true;
-
+                
                 scene.add(satelliteGround);
-                document.getElementById('hud-status').innerText = "Cena pronta.";
-                if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-            }, undefined, (err) => {
-                document.getElementById('hud-status').innerText = "Erro ao carregar textura do terreno.";
             });
         }
 
-        function clearAllModels() {
-            if(!confirm("Tem certeza que deseja limpar toda a maquete gráfica?")) return;
-            
-            window.loadedModelsList.forEach(m => scene.remove(m));
+        window.clearAllModels = function() {
+            if(window.loadedModelsList) {
+                window.loadedModelsList.forEach(m => scene.remove(m));
+            }
             window.loadedModelsList = [];
             setActiveModel(null);
             updateUIObjectList();
-            
-            document.getElementById('prop-ground-mesh').value = "none";
-            updateGroundMesh();
-            
-            document.getElementById('hud-status').innerText = "Cena reiniciada.";
             if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
