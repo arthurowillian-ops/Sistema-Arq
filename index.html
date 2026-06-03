@@ -249,6 +249,7 @@
                     <option value="none" selected>Nenhuma</option>
                     <option value="mesh1">Malha 1 (Gramado)</option>
                     <option value="mesh2">Malha 2 (Projeto)</option>
+                    <option value="mesh3">Malha 3</option>
                 </select>
             </div>
 
@@ -319,7 +320,8 @@
 
         const groundTextures = {
             mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
-            mesh2: 'https://i.postimg.cc/tJs9mpdz/image.png'
+            mesh2: 'https://i.postimg.cc/tJs9mpdz/image.png',
+            mesh3: 'https://i.postimg.cc/02981Fgt/Minimalist-Business-Card-(2).png'
         };
 
         function enterStudio() {
@@ -629,94 +631,118 @@
 
         function syncRotationInput(value) {
             if (!activeModel) return;
-            const numericValue = Number(value) || 0;
-            document.getElementById('rot-y').value = numericValue;
-            document.getElementById('rot-y-num').value = numericValue;
-            activeModel.rotation.y = THREE.MathUtils.degToRad(numericValue);
+            const degrees = Number(value) || 0;
+            document.getElementById('rot-y').value = degrees;
+            document.getElementById('rot-y-num').value = degrees;
+            activeModel.rotation.y = THREE.MathUtils.degToRad(degrees);
             if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateSolarOrbit() {
-            const angleDeg = parseFloat(document.getElementById('prop-solar-pos').value);
-            const textTime = document.getElementById('val-sun-time');
-            if(!textTime) return;
+            const angle = document.getElementById('prop-solar-pos').value;
+            const rad = THREE.MathUtils.degToRad(angle);
+            
+            // Reposiciona o Sol baseado no slider orbital (Movimento Leste-Oeste)
+            const radius = 300;
+            mainLight.position.x = radius * Math.cos(rad);
+            mainLight.position.y = radius * Math.sin(rad);
+            mainLight.position.z = 100; // Leve inclinação lateral permanente
 
-            const hourCalc = 6 + (angleDeg / 180) * 12;
-            const hours = Math.floor(hourCalc);
-            const minutes = Math.floor((hourCalc - hours) * 60).toString().padStart(2, '0');
-            textTime.innerText = `${hours.toString().padStart(2, '0')}:${minutes}`;
-
-            const angleRad = (angleDeg * Math.PI) / 180;
-            const orbitRadius = 400;
-
-            mainLight.position.x = Math.cos(angleRad) * orbitRadius;
-            mainLight.position.y = Math.sin(angleRad) * orbitRadius;
-            mainLight.position.z = (Math.cos(angleRad) * 0.3) * orbitRadius; 
+            // Transforma o ângulo visual em formato de relógio 24h para o HUD
+            const totalMinutes = Math.round((angle / 180) * 12 * 60) + (6 * 60); // Inicia às 06:00 e termina às 18:00
+            const hours = Math.floor(totalMinutes / 60) % 24;
+            const minutes = Math.floor(totalMinutes % 60);
+            document.getElementById('val-sun-time').innerText = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             
             if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateLighting() {
-            mainLight.intensity = parseFloat(document.getElementById('prop-light').value);
-            ambientLight.intensity = parseFloat(document.getElementById('prop-ambient').value);
+            const sunIntensity = parseFloat(document.getElementById('prop-light').value);
+            const ambientIntensity = parseFloat(document.getElementById('prop-ambient').value);
+            
+            if(mainLight) mainLight.intensity = sunIntensity;
+            if(ambientLight) ambientLight.intensity = ambientIntensity;
             if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateBackground() {
-            const color = document.getElementById('prop-bg-color').value;
-            if(scene) scene.background = new THREE.Color(color);
+            const colorHex = document.getElementById('prop-bg-color').value;
+            if(scene) scene.background.set(colorHex);
             if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
-        function updateGroundMesh() {
-            if (!scene) return;
-            const selectedOption = document.getElementById('prop-ground-mesh').value;
+        function toggleGrid() {
+            const show = document.getElementById('prop-grid-toggle').checked;
+            if(gridHelper) gridHelper.visible = show;
+        }
 
-            if (selectedOption === 'none') {
-                if (satelliteGround) { scene.remove(satelliteGround); satelliteGround = null; }
+        function updateGroundMesh() {
+            const selected = document.getElementById('prop-ground-mesh').value;
+
+            if (satelliteGround) {
+                scene.remove(satelliteGround);
+                satelliteGround = null;
+            }
+
+            if (selected === 'none') {
+                if(window.saveConfigToFirebase) window.saveConfigToFirebase();
                 return;
             }
 
-            const loader = new THREE.TextureLoader();
-            loader.load(groundTextures[selectedOption], (texture) => {
+            const textureUrl = groundTextures[selected];
+            const textureLoader = new THREE.TextureLoader();
+            
+            document.getElementById('hud-status').innerText = "Carregando textura de terreno...";
+
+            textureLoader.load(textureUrl, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
-                if (satelliteGround) {
-                    satelliteGround.material.map = texture;
-                    satelliteGround.material.needsUpdate = true;
-                } else {
-                    const material = new THREE.MeshLambertMaterial({ map: texture });
-                    const geometry = new THREE.PlaneGeometry(1200, 1200);
-                    satelliteGround = new THREE.Mesh(geometry, material);
-                    satelliteGround.rotation.x = -Math.PI / 2;
-                    satelliteGround.position.y = -0.08;
-                    satelliteGround.receiveShadow = true;
-                    scene.add(satelliteGround);
-                }
+                
+                // Configuração para repetir caso necessário
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+
+                const geo = new THREE.PlaneGeometry(800, 800);
+                const mat = new THREE.MeshStandardMaterial({ 
+                    map: texture, 
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+                
+                satelliteGround = new THREE.Mesh(geo, mat);
+                satelliteGround.rotation.x = -Math.PI / 2;
+                satelliteGround.position.y = -0.1; // Senta logo abaixo do grid e da sombra
+                satelliteGround.receiveShadow = true;
+
+                scene.add(satelliteGround);
+                document.getElementById('hud-status').innerText = "Cena pronta.";
                 if(window.saveConfigToFirebase) window.saveConfigToFirebase();
+            }, undefined, (err) => {
+                document.getElementById('hud-status').innerText = "Erro ao carregar textura do terreno.";
             });
         }
 
-        function toggleGrid() {
-            const isChecked = document.getElementById('prop-grid-toggle').checked;
-            if(gridHelper) gridHelper.visible = isChecked;
-            if(shadowGround) shadowGround.visible = isChecked; 
-        }
-
-        window.clearAllModels = function() {
+        function clearAllModels() {
+            if(!confirm("Tem certeza que deseja limpar toda a maquete gráfica?")) return;
+            
             window.loadedModelsList.forEach(m => scene.remove(m));
             window.loadedModelsList = [];
             setActiveModel(null);
             updateUIObjectList();
-            document.getElementById('hud-status').innerText = "Cena limpa com sucesso.";
+            
+            document.getElementById('prop-ground-mesh').value = "none";
+            updateGroundMesh();
+            
+            document.getElementById('hud-status').innerText = "Cena reiniciada.";
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         window.addEventListener('resize', () => {
             const container = document.getElementById('three-container');
-            if (camera && renderer && container) {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            }
+            if(!container || !renderer) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
         });
     </script>
 </body>
