@@ -2,21 +2,15 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Visualizador de modelos 3D Profissional</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de modelos 3D</title>
     
-    <!-- Core do Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
-    <!-- Loaders de Formatos -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     
-    <!-- Bibliotecas de Descompactação Ultra-Rápida (Motores WebAssembly) -->
-    <script src="https://cdn.jsdelivr.net/npm/meshoptimizer@0.18.1/meshopt_decoder.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/basis/basis_transcoder.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/KTX2Loader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
 
     <style>
@@ -32,7 +26,7 @@
             --success: #22c55e;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
         /* TELA DE LOADING */
@@ -43,85 +37,112 @@
             z-index: 9999; transition: opacity 0.5s ease; opacity: 1;
         }
         .login-card {
-            background: rgba(30, 41, 59, 0.7); padding: 30px; border-radius: 24px;
+            background: rgba(30, 41, 59, 0.7); padding: 50px; border-radius: 24px;
             border: 1px solid var(--border-color); backdrop-filter: blur(16px);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; max-width: 440px; width: 90%;
         }
-        .login-card img { width: 110px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3)); }
-        .brand-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-        .brand-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 25px; }
+        .login-card img { width: 130px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3)); }
+        .brand-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; }
+        .brand-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 30px; }
         .btn-enter {
             width: 100%; padding: 16px; background: var(--accent-cad); color: white;
             border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
             transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(37,99,235,0.4);
         }
+        .btn-enter:hover { background: var(--accent-cad-hover); transform: translateY(-2px); }
 
         /* HEADER PRINCIPAL */
-        header { height: 60px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; }
-        .logo { font-weight: 800; font-size: 13px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
-        .logo span { background: var(--accent-cad); color: white; padding: 3px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; }
-        .btn-clear { padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; transition: background 0.2s; }
+        header { height: 65px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+        .logo { font-weight: 800; font-size: 15px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+        .logo span { background: var(--accent-cad); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .btn-clear { padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+        .btn-clear:hover { background: #dc2626; }
 
         /* WORKSPACE UNIFICADO */
-        .main-workspace { display: flex; flex: 1; height: calc(100vh - 60px); position: relative; background: var(--bg-workspace); }
+        .main-workspace { display: flex; flex: 1; height: calc(100vh - 65px); position: relative; background: var(--bg-workspace); }
 
         /* VIEWPORT DO MOTOR THREE.JS */
-        #render-view { flex: 1; height: 100%; position: relative; width: 100%; }
+        #render-view { flex: 1; height: 100%; position: relative; }
         #three-container { width: 100%; height: 100%; }
 
-        /* HUD DE STATUS */
-        .hud-bar { position: absolute; top: 12px; left: 12px; right: 12px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 11px; font-family: monospace; color: var(--text-main); pointer-events: none; z-index: 80; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .hud-bar::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; flex-shrink: 0; }
-
-        /* BOTÃO TOGGLE CONFIGURAÇÕES (MOBILE ONLY) */
-        .btn-toggle-panel { display: none; position: absolute; bottom: 85px; right: 16px; z-index: 110; width: 48px; height: 48px; background: var(--accent-cad); border-radius: 50%; color: white; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: none; cursor: pointer; }
+        /* HUD DE STATUS INFORMÁTICO */
+        .hud-bar { position: absolute; top: 20px; left: 20px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 12px 20px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 12px; font-family: monospace; color: var(--text-main); pointer-events: none; z-index: 80; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; }
+        .hud-bar::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; }
 
         /* DROP ZONE / UPLOAD DE ARQUIVOS */
         .upload-zone {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
             background: rgba(30, 41, 59, 0.95); border: 2px dashed var(--accent-cad);
-            padding: 12px 20px; border-radius: 12px; display: flex; gap: 10px; align-items: center;
+            padding: 16px 32px; border-radius: 14px; display: flex; gap: 15px; align-items: center;
             z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 12px 35px rgba(0,0,0,0.6);
-            width: calc(100% - 32px); max-width: 400px; justify-content: center;
+            transition: all 0.3s ease;
         }
-        .upload-zone label { font-size: 12px; font-weight: 700; color: white; cursor: pointer; background: var(--accent-cad); padding: 8px 14px; border-radius: 6px; text-align: center; white-space: nowrap; }
+        .upload-zone label { font-size: 12px; font-weight: 700; color: white; cursor: pointer; background: var(--accent-cad); padding: 8px 16px; border-radius: 6px; transition: background 0.2s; }
+        .upload-zone label:hover { background: var(--accent-cad-hover); }
         .upload-zone span { font-size: 12px; color: var(--text-muted); font-weight: 500; }
         #file-input { display: none; }
 
         /* PAINEL LATERAL DE PROPRIEDADES */
-        aside.right-panel { width: 300px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 20px; z-index: 50; overflow-y: auto; transition: transform 0.3s ease; }
-        .panel-section-title { font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; }
-        .prop-group { display: flex; flex-direction: column; gap: 6px; }
-        .prop-group label { font-size: 11px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; }
+        aside.right-panel { width: 300px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 24px; z-index: 50; overflow-y: auto; }
+        .panel-section-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .prop-group { display: flex; flex-direction: column; gap: 8px; }
+        .prop-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; }
         .prop-group label span { color: var(--accent-cad); font-family: monospace; }
         .prop-select, .prop-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; outline: none; background: var(--bg-main); color: var(--text-main); }
-        .prop-button { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: #0f766e; color: #ecfeff; font-size: 12px; font-weight: 700; cursor: pointer; border: none; }
-        .prop-button.secondary { background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); }
-        .axis-row { display: grid; grid-template-columns: 20px 1fr 60px; gap: 8px; align-items: center; }
-        .axis-row strong { font-size: 11px; color: var(--text-muted); text-align: center; }
-        .axis-row .prop-input { padding: 6px; text-align: right; font-size: 12px; }
+        .prop-button { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: #0f766e; color: #ecfeff; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+        .prop-button:hover { background: #0d9488; transform: translateY(-1px); }
+        .prop-button.secondary { background: var(--bg-main); color: var(--text-main); }
+        .prop-button.secondary:hover { background: #273449; }
+        .axis-row { display: grid; grid-template-columns: 26px 1fr 64px; gap: 8px; align-items: center; }
+        .axis-row strong { font-size: 12px; color: var(--text-muted); text-align: center; }
+        .axis-row input[type="range"] { width: 100%; }
+        .axis-row .prop-input { padding: 8px; text-align: right; }
         
-        input[type="range"] { height: 6px; -webkit-appearance: none; background: var(--border-color); border-radius: 3px; outline: none; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-cad); cursor: pointer; }
-        
-        .info-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+        /* METADADOS DO MODELO */
+        .info-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; }
         .info-card span { color: var(--text-main); }
 
-        /* RESPONSIVIDADE SMARTPHONES */
-        @media (max-width: 768px) {
+        /* ==========================================================================
+           REGRAS DE ADAPTAÇÃO PARA CELULAR (HORIZONTAL / LANDSCAPE)
+           ========================================================================== */
+        @media (max-width: 900px) {
+            header { height: 50px; padding: 0 12px; }
+            header .logo { font-size: 12px; }
             header .logo span { display: none; }
-            .main-workspace { flex-direction: column; }
-            .upload-zone span { display: none; }
-            .upload-zone { bottom: 16px; width: calc(100% - 80px); left: 16px; transform: none; }
-            .btn-toggle-panel { display: block; }
+            .main-workspace { height: calc(100vh - 50px); flex-direction: column; }
+            
+            /* O painel lateral vira uma barra inferior horizontal com scroll de opções */
             aside.right-panel {
-                position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh;
-                border-left: none; border-top: 1px solid var(--border-color);
-                transform: translateY(100%); z-index: 105;
-                box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
-                border-radius: 20px 20px 0 0;
+                width: 100%;
+                height: 140px;
+                flex-direction: row;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+                padding: 12px;
+                gap: 20px;
+                overflow-x: auto;
+                overflow-y: hidden;
             }
-            aside.right-panel.active { transform: translateY(0); }
+            .panel-section-title {
+                display: none; /* Esconde títulos longos para poupar espaço */
+            }
+            .prop-group {
+                min-width: 180px;
+                justify-content: center;
+            }
+            .axis-row {
+                grid-template-columns: 15px 1fr; /* Remove o input numérico no mobile */
+            }
+            .axis-row .prop-input { display: none; }
+            .info-card { display: none; } /* Oculta dados de polígonos no celular */
+            .upload-zone {
+                bottom: 10px;
+                padding: 8px 16px;
+                font-size: 11px;
+                width: 85%;
+            }
+            .upload-zone span { display: none; } /* Encurta o texto do upload */
+            .hud-bar { top: 10px; left: 10px; padding: 6px 12px; font-size: 10px; }
         }
     </style>
 </head>
@@ -129,7 +150,7 @@
 
     <div id="welcome-screen">
         <div class="login-card">
-            <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Logo">
+            <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Arthur 3D Logo">
             <h1 class="brand-title">Visualizador de modelos 3D</h1>
             <p class="brand-subtitle">developed by Arthur Willian</p>
             <button class="btn-enter" onclick="enterStudio()">Abrir visualizador</button>
@@ -145,10 +166,8 @@
 
     <div class="main-workspace">
         <div id="render-view">
-            <div class="hud-bar" id="hud-status">Aguardando maquete (.glb, .fbx)...</div>
+            <div class="hud-bar" id="hud-status">Aguardando importação de maquete (.glb, .fbx)...</div>
             <div id="three-container"></div>
-
-            <button class="btn-toggle-panel" id="toggle-panel-btn" onclick="toggleMobilePanel()">⚙️</button>
 
             <div class="upload-zone" id="drop-zone">
                 <span>Arraste seu arquivo .glb ou .fbx aqui ou</span>
@@ -157,33 +176,32 @@
             </div>
         </div>
 
-        <aside class="right-panel" id="right-panel">
-            <div class="panel-section-title">Estudo Solar</div>
+        <aside class="right-panel">
             <div class="prop-group">
-                <label>Orientação Solar / Horário <span id="val-sun-time">12:00</span></label>
+                <label>Orientação Solar <span id="val-sun-time">12:00</span></label>
                 <input type="range" id="prop-solar-pos" min="0" max="180" step="1" value="90" oninput="updateSolarOrbit()">
             </div>
             <div class="prop-group">
-                <label>Intensidade da Radiação (Sol)</label>
+                <label>Intensidade (Sol)</label>
                 <input type="range" id="prop-light" min="0" max="5" step="0.1" value="2.0" oninput="updateLighting()">
             </div>
             <div class="prop-group">
-                <label>Luz de Rebatimento (Ambiente)</label>
+                <label>Ambiente</label>
                 <input type="range" id="prop-ambient" min="0" max="2" step="0.1" value="0.5" oninput="updateLighting()">
             </div>
 
-            <div class="panel-section-title">Parâmetros do Ambiente</div>
             <div class="prop-group">
                 <label>Fundo do Viewport</label>
                 <select id="prop-bg-color" class="prop-select" onchange="updateBackground()">
                     <option value="#070a13" selected>Dark Slate Studio</option>
                     <option value="#1e293b">Industrial Gray</option>
-                    <option value="#000000">True Black (High Contrast)</option>
+                    <option value="#000000">True Black</option>
                     <option value="#d9efff">Cor do céu</option>
                 </select>
             </div>
-            <div class="prop-group">
-                <label><input type="checkbox" id="prop-grid-toggle" checked onchange="toggleGrid()"> Exibir Grade de Referência</label>
+            <div class="prop-group" style="flex-direction:row; align-items:center; gap:5px;">
+                <input type="checkbox" id="prop-grid-toggle" checked onchange="toggleGrid()"> 
+                <label for="prop-grid-toggle">Exibir Grade</label>
             </div>
             <div class="prop-group">
                 <label>Malha de Terreno</label>
@@ -194,9 +212,8 @@
                 </select>
             </div>
 
-            <div class="panel-section-title">Posicionamento da Maquete</div>
             <div class="prop-group">
-                <label>Deslocamento lateral</label>
+                <label>Laterais (X)</label>
                 <div class="axis-row">
                     <strong>X</strong>
                     <input type="range" id="move-x" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
@@ -204,7 +221,7 @@
                 </div>
             </div>
             <div class="prop-group">
-                <label>Altura</label>
+                <label>Altura (Y)</label>
                 <div class="axis-row">
                     <strong>Y</strong>
                     <input type="range" id="move-y" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
@@ -212,7 +229,7 @@
                 </div>
             </div>
             <div class="prop-group">
-                <label>Profundidade</label>
+                <label>Profundidade (Z)</label>
                 <div class="axis-row">
                     <strong>Z</strong>
                     <input type="range" id="move-z" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
@@ -221,7 +238,7 @@
             </div>
             
             <div class="prop-group">
-                <label>Rotação (Girar)</label>
+                <label>Rotação (R)</label>
                 <div class="axis-row">
                     <strong>R</strong>
                     <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
@@ -229,7 +246,7 @@
                 </div>
             </div>
             <div class="prop-group">
-                <label>Escala (Tamanho)</label>
+                <label>Escala (S)</label>
                 <div class="axis-row">
                     <strong>S</strong>
                     <input type="range" id="scale-m" min="0.1" max="5" step="0.05" value="1" oninput="syncScaleInput(this.value)">
@@ -238,10 +255,9 @@
             </div>
 
             <div class="prop-group">
-                <button class="prop-button secondary" onclick="resetModelTransform()">Centralizar maquete</button>
+                <button class="prop-button secondary" onclick="resetModelTransform()">Centralizar</button>
             </div>
 
-            <div class="panel-section-title">Dados Técnicos do Modelo</div>
             <div class="info-card">
                 <div>Arquivo: <span id="info-name">Nenhum</span></div>
                 <div>Formato: <span id="info-type">-</span></div>
@@ -251,15 +267,94 @@
         </aside>
     </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDFP85eQsSJDrx-klldmjtHe2oEx1jzrns",
+            authDomain: "arquitetura-855d5.firebaseapp.com",
+            projectId: "arquitetura-855d5",
+            storageBucket: "arquitetura-855d5.firebasestorage.app",
+            messagingSenderId: "82859867262",
+            appId: "1:82859867262:web:cd5ef29765d57fdc5eec2f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Disponibiliza as funções do Firebase globalmente para os inputs HTML usarem
+        window.saveConfigToFirebase = function() {
+            if (!currentLoadedName) return;
+            
+            // Higieniza o nome do arquivo removendo caracteres proibidos pelo Firebase (. # $ [ ] / )
+            const fileKey = currentLoadedName.replace(/[\.\#\$\[\]\/]/g, "_");
+
+            set(ref(db, 'models/' + fileKey), {
+                offsetX: modelOffset.x,
+                offsetY: modelOffset.y,
+                offsetZ: modelOffset.z,
+                scale: modelScale,
+                rotationY: modelRotationY,
+                solarPos: document.getElementById('prop-solar-pos').value,
+                lightIntensity: document.getElementById('prop-light').value,
+                ambientIntensity: document.getElementById('prop-ambient').value,
+                bgColor: document.getElementById('prop-bg-color').value,
+                groundMesh: document.getElementById('prop-ground-mesh').value
+            }).then(() => {
+                document.getElementById('hud-status').innerText = "Configurações salvas na nuvem.";
+            }).catch((error) => {
+                console.error("Erro ao salvar:", error);
+            });
+        };
+
+        window.loadConfigFromFirebase = function(filename) {
+            const fileKey = filename.replace(/[\.\#\$\[\]\/]/g, "_");
+            const dbRef = ref(db);
+            
+            get(child(dbRef, `models/${fileKey}`)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    
+                    // Aplica transformações estruturais
+                    syncTransformInput('x', data.offsetX ?? 0);
+                    syncTransformInput('y', data.offsetY ?? 0);
+                    syncTransformInput('z', data.offsetZ ?? 0);
+                    syncScaleInput(data.scale ?? 1);
+                    syncRotationInput(data.rotationY ?? 0);
+
+                    // Aplica iluminação e ambiente
+                    document.getElementById('prop-solar-pos').value = data.solarPos ?? 90;
+                    document.getElementById('prop-light').value = data.lightIntensity ?? 2.0;
+                    document.getElementById('prop-ambient').value = data.ambientIntensity ?? 0.5;
+                    document.getElementById('prop-bg-color').value = data.bgColor ?? "#070a13";
+                    document.getElementById('prop-ground-mesh').value = data.groundMesh ?? "none";
+
+                    // Atualiza o motor gráfico baseado nos novos inputs
+                    updateSolarOrbit();
+                    updateLighting();
+                    updateBackground();
+                    updateGroundMesh();
+
+                    document.getElementById('hud-status').innerText = `Configuração de [${filename}] recuperada do Firebase!`;
+                } else {
+                    document.getElementById('hud-status').innerText = "Nenhum ajuste anterior salvo para este modelo.";
+                }
+            }).catch((error) => {
+                console.error(error);
+            });
+        };
+    </script>
+
     <script>
         let scene, camera, renderer, controls, currentModel, gridHelper, shadowGround, satelliteGround;
         let mainLight, ambientLight, fillLight;
-        let ktx2Loader;
         let currentModelRadius = 50; 
         const modelOffset = { x: 0, y: 0, z: 0 };
         let modelBasePosition = { x: 0, y: 0, z: 0 };
         let modelScale = 1;
         let modelRotationY = 0;
+        let currentLoadedName = ""; // Armazena o nome do arquivo atual
 
         const groundTextures = {
             mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
@@ -273,19 +368,6 @@
                 welcome.style.display = 'none';
                 initThreeEngine();
             }, 500);
-        }
-
-        function toggleMobilePanel() {
-            const panel = document.getElementById('right-panel');
-            const btn = document.getElementById('toggle-panel-btn');
-            panel.classList.toggle('active');
-            if(panel.classList.contains('active')) {
-                btn.innerText = "✕";
-                btn.style.bottom = "calc(50vh + 16px)";
-            } else {
-                btn.innerText = "⚙️";
-                btn.style.bottom = "85px";
-            }
         }
 
         function initThreeEngine() {
@@ -307,10 +389,6 @@
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             container.appendChild(renderer.domElement);
 
-            ktx2Loader = new THREE.KTX2Loader()
-                .setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/basis/')
-                .detectSupport(renderer);
-
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
@@ -321,8 +399,9 @@
 
             mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
             mainLight.castShadow = true;
-            mainLight.shadow.mapSize.width = 2048; 
-            mainLight.shadow.mapSize.height = 2048;
+            
+            mainLight.shadow.mapSize.width = 4096;
+            mainLight.shadow.mapSize.height = 4096;
             mainLight.shadow.camera.near = 0.5;
             mainLight.shadow.camera.far = 1000;
             
@@ -347,6 +426,7 @@
             scene.add(shadowGround);
 
             updateSolarOrbit();
+
             window.addEventListener('resize', onWindowResize);
             setupDragAndDrop();
             animate();
@@ -378,8 +458,8 @@
         function updateSolarOrbit() {
             const angleDeg = parseFloat(document.getElementById('prop-solar-pos').value);
             const textTime = document.getElementById('val-sun-time');
-            if (!textTime) return;
-            
+            if(!textTime) return;
+
             if (angleDeg === 0 || angleDeg === 180) textTime.innerText = angleDeg === 0 ? "06:00 (Amanhecer)" : "18:00 (Ocaso)";
             else if (angleDeg === 90) textTime.innerText = "12:00 (Zênite)";
             else {
@@ -395,17 +475,21 @@
             mainLight.position.x = Math.cos(angleRad) * orbitRadius;
             mainLight.position.y = Math.sin(angleRad) * orbitRadius;
             mainLight.position.z = (Math.cos(angleRad) * 0.3) * orbitRadius; 
+            
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateLighting() {
             mainLight.intensity = parseFloat(document.getElementById('prop-light').value);
             ambientLight.intensity = parseFloat(document.getElementById('prop-ambient').value);
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateBackground() {
             const color = document.getElementById('prop-bg-color').value;
             if(scene) scene.background = new THREE.Color(color);
             if(renderer) renderer.setClearColor(color, 1);
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateGroundMesh() {
@@ -419,9 +503,6 @@
             }
 
             const textureUrl = groundTextures[selectedOption];
-            const labelMesh = selectedOption === 'mesh1' ? 'Malha 1 (Gramado)' : 'Malha 2 (Projeto)';
-            document.getElementById('hud-status').innerText = `Carregando ${labelMesh}...`;
-
             const loader = new THREE.TextureLoader();
             loader.load(textureUrl, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
@@ -439,9 +520,7 @@
                     satelliteGround.receiveShadow = true;
                     scene.add(satelliteGround);
                 }
-                document.getElementById('hud-status').innerText = `${labelMesh} aplicada!`;
-            }, undefined, () => {
-                document.getElementById('hud-status').innerText = `Erro ao carregar a ${labelMesh}.`;
+                if(window.saveConfigToFirebase) window.saveConfigToFirebase();
             });
         }
 
@@ -455,65 +534,6 @@
             updateModelTransform();
         }
 
-        // CORREÇÃO CRÍTICA DO SISTEMA: Carregamento Binário via ArrayBuffer (Ignora Blobs com erro de rede)
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const extension = file.name.split('.').pop().toLowerCase();
-            if (extension !== 'glb' && extension !== 'fbx') {
-                document.getElementById('hud-status').innerText = "Use apenas arquivos .glb ou .fbx.";
-                return;
-            }
-            
-            document.getElementById('hud-status').innerText = `Lendo bytes de [${file.name}]...`;
-            
-            const reader = new FileReader();
-            
-            reader.onload = function (event) {
-                const arrayBuffer = event.target.result;
-                document.getElementById('hud-status').innerText = "Montando geometria 3D na GPU...";
-
-                if (extension === 'glb') {
-                    const loader = new THREE.GLTFLoader();
-                    loader.setMeshoptDecoder(MeshoptDecoder);
-                    loader.setKTX2Loader(ktx2Loader);
-
-                    // Força o parse direto dos bytes puros carregados na memória do celular
-                    loader.parse(arrayBuffer, '', (gltf) => {
-                        injectModelIntoScene(gltf.scene, file.name, 'GLB Otimizado (Memória Direta)');
-                    }, (err) => {
-                        console.error(err);
-                        document.getElementById('hud-status').innerText = "Falha crítica no decodificador Meshopt/GLB.";
-                    });
-
-                } else if (extension === 'fbx') {
-                    try {
-                        const loader = new THREE.FBXLoader();
-                        const object = loader.parse(arrayBuffer, '');
-                        injectModelIntoScene(object, file.name, 'Autodesk FBX (Memória Direta)');
-                    } catch (err) {
-                        console.error(err);
-                        document.getElementById('hud-status').innerText = "Erro ao processar os nós de animação do FBX.";
-                    }
-                }
-            };
-
-            reader.onerror = function() {
-                document.getElementById('hud-status').innerText = "Erro físico de leitura do arquivo no celular.";
-            };
-
-            // Dispara o gatilho de leitura direta na RAM
-            reader.readAsArrayBuffer(file);
-        }
-
-        function setupDragAndDrop() {
-            const dropZone = document.getElementById('drop-zone');
-            if(!dropZone) return;
-            window.addEventListener('dragover', (e) => e.preventDefault());
-            window.addEventListener('drop', (e) => e.preventDefault());
-        }
-
         function syncScaleInput(value) {
             const numericValue = Math.max(0.1, Number(value) || 1);
             const range = document.getElementById('scale-m');
@@ -522,6 +542,7 @@
             if (input) input.value = numericValue;
             modelScale = numericValue;
             if (currentModel) currentModel.scale.set(modelScale, modelScale, modelScale);
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function syncRotationInput(value) {
@@ -532,18 +553,19 @@
             if (input) input.value = numericValue;
             modelRotationY = numericValue;
             if (currentModel) currentModel.rotation.y = THREE.MathUtils.degToRad(modelRotationY);
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function updateModelTransform() {
             if (!currentModel) return;
             currentModel.position.set(modelBasePosition.x + modelOffset.x, modelBasePosition.y + modelOffset.y, modelBasePosition.z + modelOffset.z);
+            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
         }
 
         function resetModelTransform() {
             ["x", "y", "z"].forEach((axis) => syncTransformInput(axis, 0));
             syncScaleInput(1);
             syncRotationInput(0);
-            if (currentModel) document.getElementById('hud-status').innerText = "Maquete restaurada.";
         }
 
         function toggleGrid() {
@@ -554,66 +576,79 @@
 
         function clearModel() {
             if (currentModel && scene) { scene.remove(currentModel); currentModel = null; }
-            if (satelliteGround && scene) { scene.remove(satelliteGround); satelliteGround = null; }
-            modelBasePosition = { x: 0, y: 0, z: 0 };
+            currentLoadedName = "";
             resetModelTransform();
-            document.getElementById('prop-ground-mesh').value = 'none';
-            document.getElementById('hud-status').innerText = "Aguardando maquete (.glb, .fbx)...";
-            document.getElementById('info-name').innerText = "Nenhum";
-            document.getElementById('info-type').innerText = "-";
-            document.getElementById('info-vertices').innerText = "0";
-            document.getElementById('info-triangles').innerText = "0";
-            currentModelRadius = 50;
-            setShadowFrustum(100);
-            updateSolarOrbit();
-            if(controls) { controls.target.set(0, 0, 0); camera.position.set(40, 40, 60); }
+            document.getElementById('hud-status').innerText = "Aguardando importação de maquete (.glb, .fbx)...";
         }
 
-        function injectModelIntoScene(loadedObject, filename, typeLabel) {
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            processUploadedFile(file);
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('drop-zone');
+            if(!dropZone) return;
+            window.addEventListener('dragover', (e) => e.preventDefault());
+            window.addEventListener('drop', (e) => e.preventDefault());
+            dropZone.addEventListener('drop', (e) => {
+                const file = e.dataTransfer.files[0];
+                if (file) processUploadedFile(file);
+            });
+        }
+
+        function processUploadedFile(file) {
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (extension !== 'glb' && extension !== 'fbx') return;
+
+            currentLoadedName = file.name;
+            document.getElementById('info-name').innerText = file.name;
+            document.getElementById('info-type').innerText = extension.toUpperCase();
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const arrayBuffer = e.target.result;
+                if (extension === 'glb') parseGLB(arrayBuffer, file.name);
+                else if (extension === 'fbx') parseFBX(arrayBuffer, file.name);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseGLB(buffer, filename) {
+            const loader = new THREE.GLTFLoader();
+            loader.parse(buffer, '', (gltf) => { injectModelIntoScene(gltf.scene, filename); });
+        }
+
+        function parseFBX(buffer, filename) {
+            const loader = new THREE.FBXLoader();
+            const object = loader.parse(buffer, '');
+            injectModelIntoScene(object, filename);
+        }
+
+        function injectModelIntoScene(loadedObject, filename) {
             if (currentModel && scene) scene.remove(currentModel);
             currentModel = loadedObject;
 
-            let vertexCount = 0;
-            let triangleCount = 0;
-
             currentModel.traverse((node) => {
-                if (node.isMesh) {
-                    node.castShadow = true;     
-                    node.receiveShadow = true;  
-                    if(node.geometry) {
-                        const geom = node.geometry;
-                        if(geom.attributes.position) vertexCount += geom.attributes.position.count;
-                        if(geom.index) triangleCount += geom.index.count / 3;
-                        else if(geom.attributes.position) triangleCount += geom.attributes.position.count / 3;
-                    }
-                }
+                if (node.isMesh) { node.castShadow = true; node.receiveShadow = true; }
             });
-
-            document.getElementById('info-name').innerText = filename;
-            document.getElementById('info-type').innerText = typeLabel;
-            document.getElementById('info-vertices').innerText = vertexCount.toLocaleString();
-            document.getElementById('info-triangles').innerText = Math.floor(triangleCount).toLocaleString();
 
             const box = new THREE.Box3().setFromObject(currentModel);
             const size = box.getSize(new THREE.Vector3());
             const center = box.getCenter(new THREE.Vector3());
 
             currentModelRadius = Math.max(size.x, size.y, size.z) || 1;
-
             currentModel.position.x += (currentModel.position.x - center.x);
             currentModel.position.y += (currentModel.position.y - box.min.y);
             currentModel.position.z += (currentModel.position.z - center.z);
             modelBasePosition = { x: currentModel.position.x, y: currentModel.position.y, z: currentModel.position.z };
             
-            resetModelTransform();
             scene.add(currentModel);
-
             setShadowFrustum(currentModelRadius * 1.5);
-            updateSolarOrbit();
-
-            camera.position.set(currentModelRadius * 2.2, currentModelRadius * 2.2, currentModelRadius * 2.2);
-            controls.target.set(0, currentModelRadius * 0.4, 0);
-            document.getElementById('hud-status').innerText = "Maquete importada com sucesso!";
+            
+            // Tenta buscar as configurações salvas no Firebase para este arquivo específico
+            if(window.loadConfigFromFirebase) window.loadConfigFromFirebase(filename);
         }
     </script>
 </body>
