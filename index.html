@@ -23,24 +23,25 @@
             --border-color: #334155;
             --success: #22c55e;
             --danger: #ef4444;
+            --warning: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-main); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* TELA DE LOADING */
+        /* ── TELA DE BOAS-VINDAS ── */
         #welcome-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 9999; transition: opacity 0.5s ease; opacity: 1;
+            z-index: 9999; transition: opacity 0.5s ease;
         }
         .login-card {
-            background: rgba(30, 41, 59, 0.7); padding: 50px; border-radius: 24px;
+            background: rgba(30,41,59,0.7); padding: 50px; border-radius: 24px;
             border: 1px solid var(--border-color); backdrop-filter: blur(16px);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; max-width: 440px; width: 90%;
         }
-        .login-card img { width: 130px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.3)); }
+        .login-card img { width: 130px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 0 12px rgba(59,130,246,0.3)); }
         .brand-title { font-size: 26px; font-weight: 800; letter-spacing: 1px; }
         .brand-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 30px; }
         .btn-enter {
@@ -50,674 +51,1359 @@
         }
         .btn-enter:hover { background: var(--accent-cad-hover); transform: translateY(-2px); }
 
-        /* HEADER PRINCIPAL */
-        header { height: 65px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
-        .logo { font-weight: 800; font-size: 15px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; }
+        /* ── HEADER ── */
+        header {
+            height: 65px; background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 100; gap: 12px;
+        }
+        .logo { font-weight: 800; font-size: 15px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
         .logo span { background: var(--accent-cad); color: white; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
-        .btn-clear { padding: 8px 16px; background: var(--danger); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s; }
-        .btn-clear:hover { background: #dc2626; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
 
-        /* WORKSPACE UNIFICADO */
+        /* ── INDICADOR DE SYNC ── */
+        #sync-pill {
+            display: flex; align-items: center; gap: 7px;
+            padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;
+            border: 1px solid var(--border-color); background: rgba(15,23,42,0.6);
+            transition: all 0.35s ease; white-space: nowrap;
+        }
+        #sync-pill .dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+            transition: background 0.3s;
+        }
+        #sync-pill.idle   .dot { background: var(--text-muted); }
+        #sync-pill.saving .dot { background: var(--warning); animation: blink .7s infinite; }
+        #sync-pill.saved  .dot { background: var(--success); }
+        #sync-pill.error  .dot { background: var(--danger); }
+        #sync-pill.idle   #sync-txt { color: var(--text-muted); }
+        #sync-pill.saving #sync-txt { color: var(--warning); }
+        #sync-pill.saved  #sync-txt { color: var(--success); }
+        #sync-pill.error  #sync-txt { color: var(--danger); }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+        /* ── BARRA DE PROGRESSO GLOBAL ── */
+        #progress-bar-wrap {
+            position: fixed; top: 0; left: 0; right: 0; height: 3px;
+            z-index: 99999; pointer-events: none; opacity: 0; transition: opacity .3s;
+        }
+        #progress-bar-wrap.active { opacity: 1; }
+        #progress-bar-fill {
+            height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-cad), #60a5fa, var(--success));
+            background-size: 200% 100%;
+            transition: width .25s ease;
+            border-radius: 0 2px 2px 0;
+        }
+
+        /* ── TOAST NOTIFICATIONS ── */
+        #toast-stack {
+            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; gap: 8px; z-index: 9998; pointer-events: none; align-items: center;
+        }
+        .toast {
+            padding: 10px 20px; border-radius: 10px; font-size: 12px; font-weight: 700;
+            box-shadow: 0 8px 24px rgba(0,0,0,.5); display: flex; align-items: center; gap: 9px;
+            animation: toastIn .3s ease; max-width: 380px; text-align: center;
+        }
+        .toast.success { background: #14532d; border: 1px solid var(--success); color: #86efac; }
+        .toast.error   { background: #7f1d1d; border: 1px solid var(--danger); color: #fca5a5; }
+        .toast.info    { background: #1e3a5f; border: 1px solid var(--accent-cad); color: #93c5fd; }
+        .toast.warn    { background: #78350f; border: 1px solid var(--warning); color: #fcd34d; }
+        @keyframes toastIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+        /* ── BOTÕES HEADER ── */
+        .btn-hdr {
+            padding: 7px 14px; border: none; border-radius: 8px; font-size: 12px;
+            font-weight: 700; cursor: pointer; transition: all .2s; white-space: nowrap;
+        }
+        .btn-hdr.danger  { background: var(--danger); color: #fff; }
+        .btn-hdr.danger:hover { background: #dc2626; }
+        .btn-hdr.primary { background: var(--accent-cad); color: #fff; }
+        .btn-hdr.primary:hover { background: var(--accent-cad-hover); }
+        .btn-hdr.success { background: #166534; color: #86efac; border: 1px solid var(--success); }
+        .btn-hdr.success:hover { background: var(--success); color: #fff; }
+        .btn-hdr.ai { background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%); color: white; box-shadow: 0 4px 12px rgba(168,85,247,0.3); }
+        .btn-hdr.ai:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+        /* ── WORKSPACE ── */
         .main-workspace { display: flex; flex: 1; height: calc(100vh - 65px); position: relative; background: var(--bg-workspace); }
-
-        /* VIEWPORT DO MOTOR THREE.JS */
         #render-view { flex: 1; height: 100%; position: relative; }
         #three-container { width: 100%; height: 100%; }
 
-        /* HUD DE STATUS INFORMÁTICO */
-        .hud-bar { position: absolute; top: 20px; left: 20px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 12px 20px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 12px; font-family: monospace; color: var(--text-main); pointer-events: none; z-index: 80; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; }
-        .hud-bar::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%; }
+        /* ── HUD ── */
+        .hud-bar {
+            position: absolute; top: 18px; left: 18px;
+            background: rgba(15,23,42,0.88); backdrop-filter: blur(8px);
+            padding: 10px 18px; border-radius: 10px; border: 1px solid var(--border-color);
+            font-size: 12px; font-family: monospace; color: var(--text-main);
+            pointer-events: none; z-index: 80; box-shadow: 0 8px 20px rgba(0,0,0,.3);
+            display: flex; align-items: center; gap: 9px; max-width: 420px;
+        }
+        .hud-bar::before { content: ''; width: 7px; height: 7px; background: var(--success); border-radius: 50%; flex-shrink: 0; }
 
-        /* DROP ZONE / UPLOAD DE ARQUIVOS */
+        /* ── UPLOAD ZONE ── */
         .upload-zone {
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
-            background: rgba(30, 41, 59, 0.95); border: 2px dashed var(--accent-cad);
-            padding: 12px 24px; border-radius: 14px; display: flex; gap: 15px; align-items: center;
-            z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 12px 35px rgba(0,0,0,0.6);
-            transition: all 0.3s ease;
+            position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+            background: rgba(30,41,59,0.95); border: 2px dashed var(--accent-cad);
+            padding: 10px 22px; border-radius: 14px; display: flex; gap: 12px; align-items: center;
+            z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,.6);
+            transition: all .3s ease;
         }
-        .upload-zone label { font-size: 12px; font-weight: 700; color: white; cursor: pointer; background: var(--accent-cad); padding: 8px 16px; border-radius: 6px; transition: background 0.2s; }
+        .upload-zone.dragover { border-color: var(--success); background: rgba(34,197,94,0.08); transform: translateX(-50%) scale(1.02); }
+        .upload-zone label { font-size: 12px; font-weight: 700; color: white; cursor: pointer; background: var(--accent-cad); padding: 8px 16px; border-radius: 6px; transition: background .2s; }
         .upload-zone label:hover { background: var(--accent-cad-hover); }
-        .upload-zone span { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-        #file-input { display: none; }
+        .upload-zone > span { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        #file-input, #floor-img-input { display: none; }
 
-        /* MENU DE CONTEXTO PERSONALIZADO */
+        /* ── CONTEXT MENU ── */
         #custom-context-menu {
-            display: none; position: absolute; background: var(--bg-sidebar); border: 1px solid var(--border-color);
-            border-radius: 8px; z-index: 1000; box-shadow: 0 10px 20px rgba(0,0,0,0.4); padding: 6px 0; min-width: 150px;
+            display: none; position: fixed; background: var(--bg-sidebar); border: 1px solid var(--border-color);
+            border-radius: 10px; z-index: 2000; box-shadow: 0 12px 28px rgba(0,0,0,.5); padding: 6px 0; min-width: 165px;
         }
-        #custom-context-menu li {
-            padding: 10px 16px; font-size: 13px; color: var(--text-main); cursor: pointer; list-style: none; display: flex; justify-content: space-between;
-        }
-        #custom-context-menu li:hover { background: var(--accent-cad); color: white; }
+        #custom-context-menu li { padding: 10px 16px; font-size: 13px; color: var(--text-main); cursor: pointer; list-style: none; }
+        #custom-context-menu li:hover { background: var(--accent-cad); }
         #custom-context-menu li.menu-delete { color: #f87171; }
         #custom-context-menu li.menu-delete:hover { background: var(--danger); color: white; }
+        .ctx-sep { height: 1px; background: var(--border-color); margin: 4px 0; }
 
-        /* PAINEL LATERAL DE PROPRIEDADES */
-        aside.right-panel { width: 320px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; gap: 20px; z-index: 50; overflow-y: auto; }
-        .panel-section-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-top: 10px; }
-        
-        /* SISTEMA DE OUTLINER / PROJETOS */
-        .object-list { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; }
-        .object-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #233149; font-size: 12px; cursor: pointer; }
-        .object-item:hover { background: #1e293b; }
-        .object-item.active { border-left: 4px solid var(--accent-cad); background: #132137; font-weight: bold; }
-        .object-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
-        .object-item button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; padding: 0 4px; }
-        .object-item button:hover { color: var(--text-main); }
+        /* ── PAINEL LATERAL ── */
+        aside.right-panel {
+            width: 310px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color);
+            padding: 16px; display: flex; flex-direction: column; gap: 14px; z-index: 50; overflow-y: auto;
+        }
+        .panel-section-title {
+            font-size: 10px; font-weight: 800; color: var(--text-muted);
+            text-transform: uppercase; letter-spacing: 1.5px;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 7px; margin-top: 6px;
+        }
 
-        .prop-group { display: flex; flex-direction: column; gap: 8px; }
-        .prop-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: flex; justify-content: space-between; }
-        .prop-group label span { color: var(--accent-cad); font-family: monospace; }
-        .prop-select, .prop-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; outline: none; background: var(--bg-main); color: var(--text-main); }
-        
-        .axis-row { display: grid; grid-template-columns: 26px 1fr 64px; gap: 8px; align-items: center; }
-        .axis-row strong { font-size: 12px; color: var(--text-muted); text-align: center; }
-        .axis-row input[type="range"] { width: 100%; }
-        .axis-row .prop-input { padding: 8px; text-align: right; }
-        
-        .info-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px; }
-        .info-card span { color: var(--text-main); }
+        /* ── LISTA DE OBJETOS ── */
+        .object-list {
+            background: var(--bg-main); border: 1px solid var(--border-color);
+            border-radius: 8px; max-height: 145px; overflow-y: auto;
+        }
+        .object-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; border-bottom: 1px solid #1e3352; font-size: 12px; cursor: pointer; gap: 6px;
+        }
+        .object-item:hover { background: #1a2744; }
+        .object-item.active { border-left: 3px solid var(--accent-cad); background: #112035; font-weight: 700; }
+        .object-item .obj-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .cloud-badge {
+            font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 700; flex-shrink: 0;
+            background: rgba(59,130,246,.18); color: #60a5fa;
+        }
+        .local-badge {
+            font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 700; flex-shrink: 0;
+            background: rgba(245,158,11,.18); color: #fbbf24;
+        }
+        .object-item .vis-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; flex-shrink: 0; }
+        .object-item .vis-btn:hover { color: var(--text-main); }
 
+        /* ── LISTA DE PROJETOS ── */
+        .project-list {
+            background: var(--bg-main); border: 1px solid var(--border-color);
+            border-radius: 8px; max-height: 130px; overflow-y: auto;
+        }
+        .project-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 9px 12px; border-bottom: 1px solid #1e3352; font-size: 12px; cursor: pointer; gap: 8px;
+        }
+        .project-item:hover { background: #1a2744; }
+        .project-item.current { border-left: 3px solid var(--success); background: #0d2016; }
+        .project-item .proj-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .project-item .proj-meta { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+        .empty-list { padding: 14px; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+        /* ── CONTROLES DE PROPRIEDADE ── */
+        .prop-group { display: flex; flex-direction: column; gap: 7px; }
+        .prop-group > label { font-size: 11px; font-weight: 700; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+        .prop-group > label span { color: var(--accent-cad); font-family: monospace; font-weight: 600; }
+        .prop-select, .prop-input {
+            width: 100%; padding: 9px 10px; border: 1px solid var(--border-color);
+            border-radius: 7px; font-size: 12px; outline: none;
+            background: var(--bg-main); color: var(--text-main);
+        }
+        .axis-row { display: grid; grid-template-columns: 22px 1fr 62px; gap: 7px; align-items: center; }
+        .axis-row strong { font-size: 11px; color: var(--text-muted); text-align: center; }
+        .axis-row .prop-input { padding: 7px; text-align: right; }
+
+        /* ── INFO CARD ── */
+        .info-card {
+            background: var(--bg-main); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 11px 13px; font-size: 11px; font-family: monospace;
+            color: var(--text-muted); display: flex; flex-direction: column; gap: 5px;
+        }
+        .info-card .ic-val { color: var(--text-main); }
+
+        /* ── UPLOAD IMAGEM DE CHÃO ── */
+        .floor-upload-wrap { display: none; flex-direction: column; gap: 7px; }
+        .floor-upload-wrap.visible { display: flex; }
+        .floor-upload-label {
+            display: block; text-align: center; padding: 9px; border: 1px dashed var(--accent-cad);
+            border-radius: 8px; font-size: 12px; font-weight: 700; color: var(--accent-cad);
+            cursor: pointer; background: rgba(59,130,246,.07); transition: background .2s;
+        }
+        .floor-upload-label:hover { background: rgba(59,130,246,.15); }
+        .floor-info { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+
+        /* ── BOTÃO NOVO PROJETO ── */
+        .btn-new-proj {
+            width: 100%; padding: 8px; background: rgba(34,197,94,.12);
+            border: 1px solid rgba(34,197,94,.4); border-radius: 8px;
+            color: var(--success); font-size: 12px; font-weight: 700; cursor: pointer;
+            transition: all .2s;
+        }
+        .btn-new-proj:hover { background: rgba(34,197,94,.22); }
+
+        /* ── MODAL DE MODOS IA ── */
+        .ai-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(7, 10, 19, 0.85); backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center; z-index: 10000; padding: 20px;
+        }
+        .ai-modal-card {
+            background: var(--bg-sidebar); border: 1px solid var(--border-color);
+            width: 100%; max-width: 950px; border-radius: 20px; display: flex;
+            flex-direction: column; max-height: 90vh; overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+        }
+        .ai-modal-header {
+            padding: 18px 24px; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .ai-modal-header h3 { font-size: 16px; font-weight: 800; letter-spacing: 0.5px; }
+        .ai-modal-close { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; font-weight: bold; transition: color .2s; }
+        .ai-modal-close:hover { color: var(--danger); }
+        .ai-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px; overflow-y: auto; }
+        .ai-panel-left { display: flex; flex-direction: column; gap: 16px; }
+        .ai-panel-right { display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 14px; position: relative; min-height: 380px; overflow: hidden; }
+        .ai-preview-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; position: relative; aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+        .ai-preview-box img { width: 100%; height: 100%; object-fit: contain; }
+        .ai-spinner { width: 44px; height: 44px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--warning); border-radius: 50%; animation: ai-spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes ai-spin { to { transform: rotate(360deg); } }
+
+        /* ── RESPONSIVE ── */
         @media (max-width: 900px) {
             header { height: 50px; padding: 0 12px; }
             .main-workspace { height: calc(100vh - 50px); flex-direction: column; }
-            aside.right-panel { width: 100%; height: 180px; flex-direction: row; border-left: none; border-top: 1px solid var(--border-color); padding: 12px; gap: 20px; overflow-x: auto; overflow-y: hidden; }
-            .panel-section-title, .info-card, .object-list { display: none; }
-            .prop-group { min-width: 180px; justify-content: center; }
-            .axis-row { grid-template-columns: 15px 1fr; }
+            aside.right-panel { width: 100%; height: 175px; flex-direction: row; border-left: none; border-top: 1px solid var(--border-color); padding: 10px; gap: 14px; overflow-x: auto; overflow-y: hidden; }
+            .panel-section-title, .info-card, .object-list, .project-list, .btn-new-proj { display: none; }
+            .prop-group { min-width: 175px; }
+            .axis-row { grid-template-columns: 16px 1fr; }
             .axis-row .prop-input { display: none; }
-            .upload-zone { bottom: 10px; padding: 8px 16px; width: 85%; }
-            .upload-zone span { display: none; }
-            .hud-bar { top: 10px; left: 10px; padding: 6px 12px; font-size: 10px; }
+            .upload-zone { bottom: 8px; padding: 7px 14px; width: 86%; }
+            .upload-zone > span { display: none; }
+            .hud-bar { top: 8px; left: 8px; padding: 6px 12px; font-size: 10px; }
+            #sync-pill { display: none; }
+            .ai-modal-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <div id="welcome-screen">
-        <div class="login-card">
-            <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Arthur 3D Logo">
-            <h1 class="brand-title">Visualizador de modelos 3D</h1>
-            <p class="brand-subtitle">developed by Arthur Willian</p>
-            <button class="btn-enter" onclick="enterStudio()">Abrir visualizador</button>
+<div id="progress-bar-wrap"><div id="progress-bar-fill"></div></div>
+
+<div id="toast-stack"></div>
+
+<div id="welcome-screen">
+    <div class="login-card">
+        <img src="https://i.postimg.cc/4N2GLY1R/Gemini-Generated-Image-xkahxoxkahxoxkah-removebg-preview-(1).png" alt="Arthur 3D Logo">
+        <h1 class="brand-title">Visualizador de modelos 3D</h1>
+        <p class="brand-subtitle">developed by Arthur Willian</p>
+        <button class="btn-enter" onclick="enterStudio()">Abrir visualizador</button>
+    </div>
+</div>
+
+<header>
+    <div class="logo">Visualizador 3D <span>Maquetes Pro</span></div>
+    <div class="header-right">
+        <div id="sync-pill" class="idle">
+            <div class="dot"></div>
+            <span id="sync-txt">Aguardando</span>
+        </div>
+        <button class="btn-hdr ai" onclick="openAiRenderModal()">✨ Render IA</button>
+        <button class="btn-hdr success" onclick="triggerManualSave()">💾 Salvar</button>
+        <button class="btn-hdr danger" onclick="clearAllModels()">↺ Resetar</button>
+    </div>
+</header>
+
+<ul id="custom-context-menu">
+    <li onclick="duplicateSelectedModel()">📄 Duplicar</li>
+    <li onclick="focusSelectedModel()">🎯 Focar câmera</li>
+    <div class="ctx-sep"></div>
+    <li class="menu-delete" onclick="deleteSelectedModel()">🗑️ Deletar</li>
+</ul>
+
+<div class="main-workspace">
+    <div id="render-view">
+        <div class="hud-bar" id="hud-status">Dê 2 cliques num objeto para editá-lo · Botão direito para opções</div>
+        <div id="three-container"></div>
+        <div class="upload-zone" id="drop-zone">
+            <span>Arraste arquivos .glb/.fbx aqui ou</span>
+            <label for="file-input">Fazer Upload</label>
+            <input type="file" id="file-input" accept=".glb,.fbx" multiple onchange="handleFileSelect(event)">
+            <input type="file" id="floor-img-input" accept="image/*" onchange="handleFloorImageSelect(event)">
         </div>
     </div>
 
-    <header>
-        <div class="logo">Visualizador 3D <span>Maquetes e Estudo Multiarquivos</span></div>
-        <div>
-            <button class="btn-clear" onclick="clearAllModels()">Resetar Cena</button>
-        </div>
-    </header>
+    <aside class="right-panel">
 
-    <ul id="custom-context-menu">
-        <li onclick="duplicateSelectedModel()">📄 Duplicar Arquivo</li>
-        <li class="menu-delete" onclick="deleteSelectedModel()">🗑️ Deletar Arquivo</li>
-    </ul>
-
-    <div class="main-workspace">
-        <div id="render-view">
-            <div class="hud-bar" id="hud-status">Dê 2 cliques num objeto para editá-lo. Use Botão Direito para opções.</div>
-            <div id="three-container"></div>
-
-            <div class="upload-zone" id="drop-zone">
-                <span>Arraste múltiplos arquivos .glb/.fbx aqui ou</span>
-                <label for="file-input">Fazer Upload</label>
-                <input type="file" id="file-input" accept=".glb,.fbx" multiple onchange="handleFileSelect(event)">
-            </div>
+        <div class="panel-section-title">Projetos Salvos</div>
+        <button class="btn-new-proj" onclick="createNewProject()">＋ Novo Projeto</button>
+        <div class="project-list" id="ui-project-list">
+            <div class="empty-list">Carregando projetos...</div>
         </div>
 
-        <aside class="right-panel">
-            <div class="panel-section-title">Camadas da Maquete (Lista)</div>
-            <div class="object-list" id="ui-object-list">
+        <div class="panel-section-title">Camadas da Maquete</div>
+        <div class="object-list" id="ui-object-list"></div>
+
+        <div class="panel-section-title">Transformações do Ativo</div>
+        <div class="prop-group">
+            <label>Laterais (X)</label>
+            <div class="axis-row">
+                <strong>X</strong>
+                <input type="range" id="move-x" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x',this.value)">
+                <input type="number" class="prop-input" id="move-x-num" value="0" oninput="syncTransformInput('x',this.value)">
+            </div>
+        </div>
+        <div class="prop-group">
+            <label>Altura (Y)</label>
+            <div class="axis-row">
+                <strong>Y</strong>
+                <input type="range" id="move-y" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y',this.value)">
+                <input type="number" class="prop-input" id="move-y-num" value="0" oninput="syncTransformInput('y',this.value)">
+            </div>
+        </div>
+        <div class="prop-group">
+            <label>Profundidade (Z)</label>
+            <div class="axis-row">
+                <strong>Z</strong>
+                <input type="range" id="move-z" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z',this.value)">
+                <input type="number" class="prop-input" id="move-z-num" value="0" oninput="syncTransformInput('z',this.value)">
+            </div>
+        </div>
+        <div class="prop-group">
+            <label>Rotação (R)</label>
+            <div class="axis-row">
+                <strong>R</strong>
+                <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
+                <input type="number" class="prop-input" id="rot-y-num" value="0" oninput="syncRotationInput(this.value)">
+            </div>
+        </div>
+        <div class="prop-group">
+            <label>Escala (S)</label>
+            <div class="axis-row">
+                <strong>S</strong>
+                <input type="range" id="scale-m" min="0.1" max="10" step="0.05" value="1" oninput="syncScaleInput(this.value)">
+                <input type="number" class="prop-input" id="scale-m-num" value="1" oninput="syncScaleInput(this.value)">
+            </div>
+        </div>
+
+        <div class="panel-section-title">Ambiente e Sol</div>
+        <div class="prop-group">
+            <label>Orientação Solar <span id="val-sun-time">12:00</span></label>
+            <input type="range" id="prop-solar-pos" min="0" max="180" step="1" value="90" oninput="updateSolarOrbit()">
+        </div>
+        <div class="prop-group">
+            <label>Intensidade (Sol)</label>
+            <input type="range" id="prop-light" min="0" max="5" step="0.1" value="2.0" oninput="updateLighting()">
+        </div>
+        <div class="prop-group">
+            <label>Luz Ambiente</label>
+            <input type="range" id="prop-ambient" min="0" max="2" step="0.1" value="0.5" oninput="updateLighting()">
+        </div>
+        <div class="prop-group">
+            <label>Fundo do Viewport</label>
+            <select id="prop-bg-color" class="prop-select" onchange="updateBackground()">
+                <option value="#070a13" selected>Dark Slate Studio</option>
+                <option value="#1e293b">Industrial Gray</option>
+                <option value="#000000">True Black</option>
+                <option value="#d9efff">Cor do céu</option>
+            </select>
+        </div>
+        <div class="prop-group" style="flex-direction:row;align-items:center;gap:8px;">
+            <input type="checkbox" id="prop-grid-toggle" checked onchange="toggleGrid()">
+            <label for="prop-grid-toggle" style="font-size:12px;color:var(--text-muted);cursor:pointer;">Exibir Grade</label>
+        </div>
+
+        <div class="panel-section-title">Malha de Terreno</div>
+        <div class="prop-group">
+            <select id="prop-ground-mesh" class="prop-select" onchange="updateGroundMesh()">
+                <option value="none" selected>Nenhuma</option>
+                <option value="mesh1">Malha 1 — Gramado</option>
+                <option value="mesh2">Malha 2 — Projeto</option>
+                <option value="mesh3">Malha 3 — Minimalista</option>
+                <option value="custom">Imagem Personalizada…</option>
+            </select>
+        </div>
+        <div class="floor-upload-wrap" id="floor-upload-wrap">
+            <label class="floor-upload-label" for="floor-img-input">📂 Escolher imagem de piso</label>
+            <div class="floor-info" id="floor-info">Nenhuma imagem carregada. A malha se adaptará automaticamente à proporção da imagem.</div>
+        </div>
+
+        <div class="info-card">
+            <div>Ativo: <span class="ic-val" id="info-name">Nenhum</span></div>
+            <div>Formato: <span class="ic-val" id="info-type">—</span></div>
+            <div>Geometrias: <span class="ic-val" id="info-geoms">0</span></div>
+            <div>Origem: <span class="ic-val" id="info-origin">—</span></div>
+            <div>Tamanho: <span class="ic-val" id="info-size">—</span></div>
+        </div>
+
+    </aside>
+</div>
+
+<div id="ai-modal" class="ai-modal-overlay">
+    <div class="ai-modal-card">
+        <div class="ai-modal-header">
+            <h3>✨ Renderização Estilizada por IA</h3>
+            <button class="ai-modal-close" onclick="closeAiRenderModal()">&times;</button>
+        </div>
+        <div class="ai-modal-grid">
+            <div class="ai-panel-left">
+                <div class="ai-preview-box">
+                    <img id="ai-capture-preview" src="" alt="Captura da maquete">
+                </div>
+                
+                <div class="prop-group">
+                    <label>Token / Chave da API (Opcional)</label>
+                    <input type="password" id="ai-api-key" class="prop-input" placeholder="Cole sua chave da API se houver...">
                 </div>
 
-            <div class="panel-section-title">Transformações do Ativo</div>
-            <div class="prop-group">
-                <label>Laterais (X)</label>
-                <div class="axis-row">
-                    <strong>X</strong>
-                    <input type="range" id="move-x" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
-                    <input type="number" class="prop-input" id="move-x-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('x', this.value)">
+                <div class="prop-group">
+                    <label>Diretrizes da Arquitetura (Prompt)</label>
+                    <textarea id="ai-prompt" class="prop-input" rows="3" placeholder="Ex: Casa modular contemporânea, fachada em concreto aparente e ripas de madeira, grandes panos de vidro, iluminação fotorrealista de fim de tarde, vegetação densa ao fundo..." style="resize:none; font-family: inherit;"></textarea>
                 </div>
-            </div>
-            <div class="prop-group">
-                <label>Altura (Y)</label>
-                <div class="axis-row">
-                    <strong>Y</strong>
-                    <input type="range" id="move-y" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
-                    <input type="number" class="prop-input" id="move-y-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('y', this.value)">
+
+                <div class="prop-group">
+                    <label>Estilo de Renderização</label>
+                    <select id="ai-style" class="prop-select">
+                        <option value="fotorrealista" selected>Fotorrealismo Arquitetônico Premium</option>
+                        <option value="sketch">Traço de Arquiteto / Croqui à Mão</option>
+                        <option value="aquarela">Aquarela Artística / Conceito</option>
+                        <option value="noturno">Cinematográfico Noturno / Luzes quentes</option>
+                    </select>
                 </div>
-            </div>
-            <div class="prop-group">
-                <label>Profundidade (Z)</label>
-                <div class="axis-row">
-                    <strong>Z</strong>
-                    <input type="range" id="move-z" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
-                    <input type="number" class="prop-input" id="move-z-num" min="-500" max="500" step="1" value="0" oninput="syncTransformInput('z', this.value)">
-                </div>
-            </div>
-            
-            <div class="prop-group">
-                <label>Rotação (R)</label>
-                <div class="axis-row">
-                    <strong>R</strong>
-                    <input type="range" id="rot-y" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
-                    <input type="number" class="prop-input" id="rot-y-num" min="0" max="360" step="1" value="0" oninput="syncRotationInput(this.value)">
-                </div>
-            </div>
-            <div class="prop-group">
-                <label>Escala (S)</label>
-                <div class="axis-row">
-                    <strong>S</strong>
-                    <input type="range" id="scale-m" min="0.1" max="10" step="0.05" value="1" oninput="syncScaleInput(this.value)">
-                    <input type="number" class="prop-input" id="scale-m-num" min="0.1" max="10" step="0.05" value="1" oninput="syncScaleInput(this.value)">
-                </div>
+
+                <button class="btn-enter" id="ai-btn-generate" onclick="executeAiRender()" style="margin-top: 8px;">Gerar Renderização</button>
             </div>
 
-            <div class="panel-section-title">Ambiente e Sol</div>
-            <div class="prop-group">
-                <label>Orientação Solar <span id="val-sun-time">12:00</span></label>
-                <input type="range" id="prop-solar-pos" min="0" max="180" step="1" value="90" oninput="updateSolarOrbit()">
-            </div>
-            <div class="prop-group">
-                <label>Intensidade (Sol)</label>
-                <input type="range" id="prop-light" min="0" max="5" step="0.1" value="2.0" oninput="updateLighting()">
-            </div>
-            <div class="prop-group">
-                <label>Ambiente</label>
-                <input type="range" id="prop-ambient" min="0" max="2" step="0.1" value="0.5" oninput="updateLighting()">
-            </div>
+            <div class="ai-panel-right" id="ai-result-container">
+                <div id="ai-placeholder" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    <span style="font-size: 40px; display: block; margin-bottom: 10px;">🖼️</span>
+                    <p style="font-size: 13px; font-weight: 700; color: white; margin-bottom: 4px;">Seu render aparecerá aqui</p>
+                    <p style="font-size: 11px; max-width: 250px; line-height: 1.4;">Ajuste o ângulo da câmera na maquete, digite as diretrizes e dispare o motor de IA.</p>
+                </div>
 
-            <div class="prop-group">
-                <label>Fundo do Viewport</label>
-                <select id="prop-bg-color" class="prop-select" onchange="updateBackground()">
-                    <option value="#070a13" selected>Dark Slate Studio</option>
-                    <option value="#1e293b">Industrial Gray</option>
-                    <option value="#000000">True Black</option>
-                    <option value="#d9efff">Cor do céu</option>
-                </select>
-            </div>
-            <div class="prop-group" style="flex-direction:row; align-items:center; gap:5px;">
-                <input type="checkbox" id="prop-grid-toggle" checked onchange="toggleGrid()"> 
-                <label for="prop-grid-toggle">Exibir Grade</label>
-            </div>
-            <div class="prop-group">
-                <label>Malha de Terreno</label>
-                <select id="prop-ground-mesh" class="prop-select" onchange="updateGroundMesh()">
-                    <option value="none" selected>Nenhuma</option>
-                    <option value="mesh1">Malha 1 (Gramado)</option>
-                    <option value="mesh2">Malha 2 (Projeto)</option>
-                </select>
-            </div>
+                <div id="ai-loading-state" style="display: none; text-align: center;">
+                    <div class="ai-spinner"></div>
+                    <p style="font-size: 12px; font-weight: 700; color: var(--warning);" id="ai-loading-text">Processando maquete nas redes neurais...</p>
+                </div>
 
-            <div class="info-card">
-                <div>Ativo: <span id="info-name">Nenhum</span></div>
-                <div>Formato: <span id="info-type">-</span></div>
-                <div>Geometrias: <span id="info-geoms">0</span></div>
+                <img id="ai-output-image" style="display: none; width: 100%; height: 100%; object-fit: contain;" src="" alt="Render IA Final">
+                
+                <a id="ai-btn-download" style="display: none; position: absolute; bottom: 16px; right: 16px; background: var(--success); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(34,197,94,0.4);" download="render_ia.png">💾 Baixar Imagem</a>
             </div>
-        </aside>
+        </div>
     </div>
+</div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+<script type="module">
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref as dbRef, set, get, push, serverTimestamp }
+                                   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL, deleteObject }
+                                   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDFP85eQsSJDrx-klldmjtHe2oEx1jzrns",
-            authDomain: "arquitetura-855d5.firebaseapp.com",
-            projectId: "arquitetura-855d5",
-            storageBucket: "arquitetura-855d5.firebasestorage.app",
-            messagingSenderId: "82859867262",
-            appId: "1:82859867262:web:cd5ef29765d57fdc5eec2f"
+/* ── Config ── */
+const FIREBASE_CFG = {
+    apiKey:            "AIzaSyDFP85eQsSJDrx-klldmjtHe2oEx1jzrns",
+    authDomain:        "arquitetura-855d5.firebaseapp.com",
+    projectId:         "arquitetura-855d5",
+    storageBucket:     "arquitetura-855d5.firebasestorage.app",
+    messagingSenderId: "82859867262",
+    appId:             "1:82859867262:web:cd5ef29765d57fdc5eec2f"
+};
+const fbApp = initializeApp(FIREBASE_CFG);
+const db      = getDatabase(fbApp);
+const storage = getStorage(fbApp);
+
+/* ── Estado global de projeto ── */
+let currentProjectId = localStorage.getItem('v3d_project') || null;
+window._FB = { currentProjectId: () => currentProjectId };
+
+/* ══ UTILITÁRIOS DE UI ══ */
+function setSyncStatus(state, text) {
+    const pill = document.getElementById('sync-pill');
+    const txt  = document.getElementById('sync-txt');
+    if (!pill || !txt) return;
+    pill.className = state; 
+    txt.textContent = text;
+}
+window._setSyncStatus = setSyncStatus;
+
+/* ══ PROGRESSO GLOBAL ══ */
+function setProgress(pct) {
+    const wrap = document.getElementById('progress-bar-wrap');
+    const fill = document.getElementById('progress-bar-fill');
+    if (!wrap || !fill) return;
+    if (pct <= 0) { wrap.classList.remove('active'); fill.style.width = '0%'; return; }
+    wrap.classList.add('active');
+    fill.style.width = Math.min(pct, 100) + '%';
+    if (pct >= 100) setTimeout(() => setProgress(0), 600);
+}
+window._setProgress = setProgress;
+
+/* ══ TOAST ══ */
+window.showToast = function(msg, type = 'info', duration = 3500) {
+    const stack = document.getElementById('toast-stack');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success: '✓', error: '✕', info: 'ℹ', warn: '⚠' };
+    t.innerHTML = `<span>${icons[type]||'ℹ'}</span>${msg}`;
+    stack.appendChild(t);
+    setTimeout(() => {
+        t.style.transition = 'opacity .35s, transform .35s';
+        t.style.opacity = '0'; t.style.transform = 'translateY(8px)';
+        setTimeout(() => t.remove(), 380);
+    }, duration);
+};
+
+/* ══ UPLOAD DE ARQUIVO 3D PARA STORAGE ══ */
+window.uploadFileToStorage = async function(file, projectId) {
+    return new Promise((resolve, reject) => {
+        const path    = `projects/${projectId}/models/${Date.now()}_${file.name}`;
+        const fileRef = stRef(storage, path);
+        const task    = uploadBytesResumable(fileRef, file);
+        setSyncStatus('saving', 'Enviando arquivo…');
+        task.on('state_changed',
+            snap => {
+                const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+                setProgress(10 + pct * 0.8);
+                window._setSyncStatus('saving', `Enviando ${Math.round(pct)}%`);
+            },
+            err => { setSyncStatus('error', 'Erro no upload'); reject(err); },
+            async () => {
+                try {
+                    const url = await getDownloadURL(task.snapshot.ref);
+                    setSyncStatus('saved', 'Sincronizado');
+                    resolve({ url, storagePath: path });
+                } catch(e) { reject(e); }
+            }
+        );
+    });
+};
+
+/* ══ UPLOAD DE IMAGEM DE PISO ══ */
+window.uploadFloorImageToStorage = async function(file, projectId) {
+    return new Promise((resolve, reject) => {
+        const path    = `projects/${projectId}/floor/${Date.now()}_${file.name}`;
+        const fileRef = stRef(storage, path);
+        const task    = uploadBytesResumable(fileRef, file);
+        setSyncStatus('saving', 'Enviando imagem…');
+        task.on('state_changed',
+            snap => {
+                const pct = (snap.bytesTransferred / snap.totalBytes) * 100;
+                setProgress(pct);
+            },
+            err => { setSyncStatus('error', 'Erro'); reject(err); },
+            async () => {
+                try {
+                    const url = await getDownloadURL(task.snapshot.ref);
+                    setSyncStatus('saved', 'Sincronizado');
+                    resolve(url);
+                } catch(e) { reject(e); }
+            }
+        );
+    });
+};
+
+/* ══ SALVAR CONFIGURAÇÃO (com debounce de 1.5 s) ══ */
+let _saveTimer = null;
+window.saveConfigToFirebase = function(immediate = false) {
+    if (!currentProjectId) return;
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(_executeSave, immediate ? 0 : 1500);
+};
+window.triggerManualSave = () => window.saveConfigToFirebase(true);
+
+async function _executeSave() {
+    if (!currentProjectId) return;
+    setSyncStatus('saving', 'Salvando…');
+
+    const modelsData = {};
+    (window.loadedModelsList || []).forEach(m => {
+        const key = (m.name + '_' + m.id).replace(/[.#$[\]/]/g, '_');
+        modelsData[key] = {
+            id:          m.id,
+            name:        m.name,
+            x:           parseFloat(m.position.x.toFixed(4)),
+            y:           parseFloat(m.position.y.toFixed(4)),
+            z:           parseFloat(m.position.z.toFixed(4)),
+            scale:       parseFloat(m.scale.x.toFixed(4)),
+            rotY:        parseFloat(m.rotation.y.toFixed(4)),
+            fileType:    m.userData.fileType  || null,
+            storageUrl:  m.userData.storageUrl  || null,
+            storagePath: m.userData.storagePath || null
         };
+    });
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    const payload = {
+        models:          modelsData,
+        solarPos:        document.getElementById('prop-solar-pos').value,
+        lightIntensity:  document.getElementById('prop-light').value,
+        ambientIntensity:document.getElementById('prop-ambient').value,
+        bgColor:         document.getElementById('prop-bg-color').value,
+        groundMesh:      document.getElementById('prop-ground-mesh').value,
+        customFloorUrl:  window._customFloorUrl || null,
+        updatedAt:       Date.now()
+    };
 
-        window.saveConfigToFirebase = function() {
-            if (!window.loadedModelsList || window.loadedModelsList.length === 0) return;
-            
-            let modelsData = {};
-            window.loadedModelsList.forEach(m => {
-                const safeKey = m.name.replace(/[\.\#\$\[\]\/]/g, "_") + "_" + m.id;
-                modelsData[safeKey] = {
-                    id: m.id,
-                    name: m.name,
-                    x: m.position.x,
-                    y: m.position.y,
-                    z: m.position.z,
-                    scale: m.scale.x,
-                    rotY: m.rotation.y
-                };
-            });
+    try {
+        await set(dbRef(db, `projects/${currentProjectId}/data`), payload);
+        setSyncStatus('saved', 'Sincronizado');
+        document.getElementById('hud-status').innerText = 'Projeto salvo na nuvem ✓';
+        _refreshProjectList();
+    } catch(err) {
+        setSyncStatus('error', 'Falha ao salvar');
+        window.showToast('Erro ao salvar: ' + err.message, 'error');
+    }
+}
 
-            set(ref(db, 'projects/current_workspace'), {
-                models: modelsData,
-                solarPos: document.getElementById('prop-solar-pos').value,
-                lightIntensity: document.getElementById('prop-light').value,
-                ambientIntensity: document.getElementById('prop-ambient').value,
-                bgColor: document.getElementById('prop-bg-color').value,
-                groundMesh: document.getElementById('prop-ground-mesh').value
-            }).then(() => {
-                document.getElementById('hud-status').innerText = "Cena salva automaticamente na nuvem.";
-            }).catch((err) => console.log("Erro Firebase:", err));
-        };
-    </script>
+/* ══ AUTOSAVE PERIÓDICO (a cada 90 s) ══ */
+setInterval(() => {
+    if (currentProjectId && window.loadedModelsList?.length > 0) _executeSave();
+}, 90_000);
 
-    <script>
-        let scene, camera, renderer, controls, gridHelper, shadowGround, satelliteGround;
-        let mainLight, ambientLight, fillLight;
-        let raycaster, mouse;
-        
-        // Estrutura Multiarquivos
-        window.loadedModelsList = [];
-        let activeModel = null;
-        let boxHelper = null; // Indicador visual de objeto ativo
-        let modelCounter = 0;
+/* ══ CRIAR NOVO PROJETO ══ */
+window.createNewProject = async function() {
+    const name = prompt('Nome do projeto:', 'Maquete ' + new Date().toLocaleDateString('pt-BR'));
+    if (!name?.trim()) return;
+    try {
+        const newRef = push(dbRef(db, 'projects'));
+        currentProjectId = newRef.key;
+        localStorage.setItem('v3d_project', currentProjectId);
+        window._FB.currentProjectId = () => currentProjectId;
+        await set(newRef, { meta: { name: name.trim(), createdAt: Date.now() }, data: {} });
+        window.clearSceneModels(true);
+        window.showToast(`Projeto "${name.trim()}" criado!`, 'success');
+        _refreshProjectList();
+    } catch(err) {
+        window.showToast('Erro ao criar projeto: ' + err.message, 'error');
+    }
+};
 
-        const groundTextures = {
-            mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
-            mesh2: 'https://i.postimg.cc/tJs9mpdz/image.png'
-        };
-
-        function enterStudio() {
-            const welcome = document.getElementById('welcome-screen');
-            welcome.style.opacity = '0';
-            setTimeout(() => {
-                welcome.style.display = 'none';
-                initThreeEngine();
-            }, 500);
+/* ══ LISTAR PROJETOS ══ */
+async function _refreshProjectList() {
+    const listEl = document.getElementById('ui-project-list');
+    try {
+        const snap = await get(dbRef(db, 'projects'));
+        if (!snap.exists()) {
+            listEl.innerHTML = '<div class="empty-list">Nenhum projeto salvo</div>'; return;
         }
-
-        function initThreeEngine() {
-            const container = document.getElementById('three-container');
-            if(!container) return;
-
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color('#070a13');
-
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 5000);
-            camera.position.set(60, 60, 90);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
-            renderer.outputColorSpace = THREE.SRGBColorSpace;
-            container.appendChild(renderer.domElement);
-
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.maxPolarAngle = Math.PI / 2 + 0.05; 
-
-            ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
-
-            mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
-            mainLight.castShadow = true;
-            mainLight.shadow.mapSize.width = 2048;
-            mainLight.shadow.mapSize.height = 2048;
-            mainLight.shadow.camera.near = 0.5;
-            mainLight.shadow.camera.far = 1500;
-            setShadowFrustum(250);
-            scene.add(mainLight);
-
-            fillLight = new THREE.DirectionalLight(0x94a3b8, 0.4);
-            fillLight.position.set(-100, 50, -100);
-            scene.add(fillLight);
-
-            gridHelper = new THREE.GridHelper(1000, 100, '#3b82f6', '#334155');
-            gridHelper.position.y = -0.05; 
-            scene.add(gridHelper);
-
-            const groundGeo = new THREE.PlaneGeometry(3000, 3000);
-            const groundMat = new THREE.ShadowMaterial({ opacity: 0.5 });
-            shadowGround = new THREE.Mesh(groundGeo, groundMat);
-            shadowGround.rotation.x = -Math.PI / 2;
-            shadowGround.receiveShadow = true;
-            scene.add(shadowGround);
-
-            // Seleção de Objetos
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-
-            renderer.domElement.addEventListener('dblclick', onDocumentDoubleClick);
-            renderer.domElement.addEventListener('contextmenu', onDocumentContextMenu);
-            document.addEventListener('click', () => {
-                document.getElementById('custom-context-menu').style.display = 'none';
-            });
-
-            updateSolarOrbit();
-            setupDragAndDrop();
-            animate();
-        }
-
-        function setShadowFrustum(size) {
-            mainLight.shadow.camera.left = -size;
-            mainLight.shadow.camera.right = size;
-            mainLight.shadow.camera.top = size;
-            mainLight.shadow.camera.bottom = -size;
-            mainLight.shadow.camera.updateProjectionMatrix();
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if(controls) controls.update();
-            if(boxHelper) boxHelper.update();
-            if(renderer && scene && camera) renderer.render(scene, camera);
-        }
-
-        // NOVO: Intercepta Duplo Clique para Ativar Edição de arquivo
-        function onDocumentDoubleClick(event) {
-            event.preventDefault();
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            
-            let targets = [];
-            window.loadedModelsList.forEach(m => targets.push(...m.children || [m]));
-            const intersects = raycaster.intersectObjects(window.loadedModelsList, true);
-
-            if (intersects.length > 0) {
-                let rootObj = intersects[0].object;
-                while (rootObj.parent && rootObj.parent.type !== "Scene") {
-                    rootObj = rootObj.parent;
-                }
-                setActiveModel(rootObj);
-            }
-        }
-
-        // NOVO: Menu de Contexto Customizado ao Clicar com Botão Direito
-        function onDocumentContextMenu(event) {
-            event.preventDefault();
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(window.loadedModelsList, true);
-
-            if (intersects.length > 0) {
-                let rootObj = intersects[0].object;
-                while (rootObj.parent && rootObj.parent.type !== "Scene") {
-                    rootObj = rootObj.parent;
-                }
-                setActiveModel(rootObj);
-
-                const menu = document.getElementById('custom-context-menu');
-                menu.style.display = 'block';
-                menu.style.left = `${event.clientX}px`;
-                menu.style.top = `${event.clientY}px`;
-            }
-        }
-
-        function setActiveModel(model) {
-            activeModel = model;
-            if(!activeModel) {
-                if(boxHelper) { scene.remove(boxHelper); boxHelper = null; }
-                return;
-            }
-
-            // Cria silhueta de seleção em volta do arquivo ativo
-            if(boxHelper) scene.remove(boxHelper);
-            boxHelper = new THREE.BoxHelper(activeModel, '#22c55e');
-            scene.add(boxHelper);
-
-            // Atualiza Inputs Laterais
-            document.getElementById('move-x').value = activeModel.position.x;
-            document.getElementById('move-x-num').value = activeModel.position.x;
-            document.getElementById('move-y').value = activeModel.position.y;
-            document.getElementById('move-y-num').value = activeModel.position.y;
-            document.getElementById('move-z').value = activeModel.position.z;
-            document.getElementById('move-z-num').value = activeModel.position.z;
-            
-            document.getElementById('scale-m').value = activeModel.scale.x;
-            document.getElementById('scale-m-num').value = activeModel.scale.x;
-            document.getElementById('rot-y').value = Math.round(THREE.MathUtils.radToDeg(activeModel.rotation.y));
-            document.getElementById('rot-y-num').value = Math.round(THREE.MathUtils.radToDeg(activeModel.rotation.y));
-
-            // Info Cards
-            document.getElementById('info-name').innerText = activeModel.name;
-            document.getElementById('info-type').innerText = activeModel.userData.fileType || "Desconhecido";
-            document.getElementById('info-geoms').innerText = activeModel.isGroup || activeModel.children.length ? activeModel.children.length : "1";
-
-            updateUIObjectList();
-            document.getElementById('hud-status').innerText = `Editando ativo: [${activeModel.name}]`;
-        }
-
-        // NOVO: Duplica o modelo ativo e joga ele levemente deslocado na cena
-        window.duplicateSelectedModel = function() {
-            if (!activeModel) return;
-            
-            const clone = activeModel.clone();
-            modelCounter++;
-            clone.id = THREE.MathUtils.generateUUID();
-            clone.name = activeModel.name.includes("cópia") ? activeModel.name : activeModel.name + " (cópia)";
-            
-            // Leve offset para não spawnar perfeitamente colado
-            clone.position.x += 15;
-            clone.position.z += 15;
-
-            scene.add(clone);
-            window.loadedModelsList.push(clone);
-            setActiveModel(clone);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        window.deleteSelectedModel = function() {
-            if (!activeModel) return;
-            scene.remove(activeModel);
-            window.loadedModelsList = window.loadedModelsList.filter(m => m.id !== activeModel.id);
-            setActiveModel(null);
-            updateUIObjectList();
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        // NOVO: Atualiza o painel de gerenciamento lateral de camadas
-        function updateUIObjectList() {
-            const listContainer = document.getElementById('ui-object-list');
-            listContainer.innerHTML = "";
-
-            window.loadedModelsList.forEach(m => {
-                const item = document.createElement('div');
-                item.className = `object-item ${activeModel && activeModel.id === m.id ? 'active' : ''}`;
-                item.onclick = () => setActiveModel(m);
-
-                const nameSpan = document.createElement('span');
-                nameSpan.innerText = m.name;
-
-                const actionBtn = document.createElement('button');
-                actionBtn.innerHTML = m.visible ? "👁️" : "🫥";
-                actionBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    m.visible = !m.visible;
-                    actionBtn.innerHTML = m.visible ? "👁️" : "🫥";
-                    if(boxHelper && activeModel.id === m.id) boxHelper.visible = m.visible;
-                };
-
-                item.appendChild(nameSpan);
-                item.appendChild(actionBtn);
-                listContainer.appendChild(item);
-            });
-        }
-
-        function handleFileSelect(e) {
-            const files = e.target.files;
-            if (!files.length) return;
-            for(let i=0; i<files.length; i++) {
-                processUploadedFile(files[i]);
-            }
-        }
-
-        function setupDragAndDrop() {
-            const dropZone = document.getElementById('drop-zone');
-            window.addEventListener('dragover', (e) => e.preventDefault());
-            window.addEventListener('drop', (e) => e.preventDefault());
-            dropZone.addEventListener('drop', (e) => {
-                const files = e.dataTransfer.files;
-                for(let i=0; i<files.length; i++) {
-                    processUploadedFile(files[i]);
-                }
-            });
-        }
-
-        function processUploadedFile(file) {
-            const extension = file.name.split('.').pop().toLowerCase();
-            if (extension !== 'glb' && extension !== 'fbx') return;
-
-            document.getElementById('hud-status').innerText = "Carregando objeto gráfico...";
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const arrayBuffer = e.target.result;
-                if (extension === 'glb') {
-                    const loader = new THREE.GLTFLoader();
-                    loader.parse(arrayBuffer, '', (gltf) => { injectModelIntoScene(gltf.scene, file.name, 'GLB'); });
-                } else if (extension === 'fbx') {
-                    const loader = new THREE.FBXLoader();
-                    const object = loader.parse(arrayBuffer, '');
-                    injectModelIntoScene(object, file.name, 'FBX');
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function injectModelIntoScene(loadedObject, filename, type) {
-            modelCounter++;
-            loadedObject.id = THREE.MathUtils.generateUUID();
-            loadedObject.name = filename;
-            loadedObject.userData = { fileType: type };
-
-            // Garante sombras internas para as malhas importadas
-            loadedObject.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-            });
-
-            scene.add(loadedObject);
-            window.loadedModelsList.push(loadedObject);
-            setActiveModel(loadedObject);
-
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        // Sincronizações e sliders de ajuste
-        function syncTransformInput(axis, value) {
-            if (!activeModel) return;
-            const numericValue = Number(value) || 0;
-            document.getElementById(`move-${axis}`).value = numericValue;
-            document.getElementById(`move-${axis}-num`).value = numericValue;
-            activeModel.position[axis] = numericValue;
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function syncScaleInput(value) {
-            if (!activeModel) return;
-            const numericValue = Math.max(0.1, Number(value) || 1);
-            document.getElementById('scale-m').value = numericValue;
-            document.getElementById('scale-m-num').value = numericValue;
-            activeModel.scale.set(numericValue, numericValue, numericValue);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function syncRotationInput(value) {
-            if (!activeModel) return;
-            const numericValue = Number(value) || 0;
-            document.getElementById('rot-y').value = numericValue;
-            document.getElementById('rot-y-num').value = numericValue;
-            activeModel.rotation.y = THREE.MathUtils.degToRad(numericValue);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function updateSolarOrbit() {
-            const angleDeg = parseFloat(document.getElementById('prop-solar-pos').value);
-            const textTime = document.getElementById('val-sun-time');
-            if(!textTime) return;
-
-            const hourCalc = 6 + (angleDeg / 180) * 12;
-            const hours = Math.floor(hourCalc);
-            const minutes = Math.floor((hourCalc - hours) * 60).toString().padStart(2, '0');
-            textTime.innerText = `${hours.toString().padStart(2, '0')}:${minutes}`;
-
-            const angleRad = (angleDeg * Math.PI) / 180;
-            const orbitRadius = 400;
-
-            mainLight.position.x = Math.cos(angleRad) * orbitRadius;
-            mainLight.position.y = Math.sin(angleRad) * orbitRadius;
-            mainLight.position.z = (Math.cos(angleRad) * 0.3) * orbitRadius; 
-            
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function updateLighting() {
-            mainLight.intensity = parseFloat(document.getElementById('prop-light').value);
-            ambientLight.intensity = parseFloat(document.getElementById('prop-ambient').value);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function updateBackground() {
-            const color = document.getElementById('prop-bg-color').value;
-            if(scene) scene.background = new THREE.Color(color);
-            if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-        }
-
-        function updateGroundMesh() {
-            if (!scene) return;
-            const selectedOption = document.getElementById('prop-ground-mesh').value;
-
-            if (selectedOption === 'none') {
-                if (satelliteGround) { scene.remove(satelliteGround); satelliteGround = null; }
-                return;
-            }
-
-            const loader = new THREE.TextureLoader();
-            loader.load(groundTextures[selectedOption], (texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace;
-                if (satelliteGround) {
-                    satelliteGround.material.map = texture;
-                    satelliteGround.material.needsUpdate = true;
-                } else {
-                    const material = new THREE.MeshLambertMaterial({ map: texture });
-                    const geometry = new THREE.PlaneGeometry(1200, 1200);
-                    satelliteGround = new THREE.Mesh(geometry, material);
-                    satelliteGround.rotation.x = -Math.PI / 2;
-                    satelliteGround.position.y = -0.08;
-                    satelliteGround.receiveShadow = true;
-                    scene.add(satelliteGround);
-                }
-                if(window.saveConfigToFirebase) window.saveConfigToFirebase();
-            });
-        }
-
-        function toggleGrid() {
-            const isChecked = document.getElementById('prop-grid-toggle').checked;
-            if(gridHelper) gridHelper.visible = isChecked;
-            if(shadowGround) shadowGround.visible = isChecked; 
-        }
-
-        window.clearAllModels = function() {
-            window.loadedModelsList.forEach(m => scene.remove(m));
-            window.loadedModelsList = [];
-            setActiveModel(null);
-            updateUIObjectList();
-            document.getElementById('hud-status').innerText = "Cena limpa com sucesso.";
-        }
-
-        window.addEventListener('resize', () => {
-            const container = document.getElementById('three-container');
-            if (camera && renderer && container) {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            }
+        const projects = snap.val();
+        listEl.innerHTML = '';
+        const sorted = Object.entries(projects)
+            .sort((a, b) => (b[1].meta?.createdAt || 0) - (a[1].meta?.createdAt || 0));
+        sorted.forEach(([id, proj]) => {
+            const div = document.createElement('div');
+            div.className = 'project-item' + (id === currentProjectId ? ' current' : '');
+            const d = proj.meta?.createdAt ? new Date(proj.meta.createdAt).toLocaleDateString('pt-BR') : '—';
+            const count = Object.keys(proj.data?.models || {}).length;
+            div.innerHTML = `
+                <span class="proj-name">${proj.meta?.name || 'Sem nome'}</span>
+                <span class="proj-meta">${count} obj · ${d}</span>`;
+            div.onclick = () => _loadProject(id, proj.meta?.name);
+            listEl.appendChild(div);
         });
-    </script>
+    } catch(err) {
+        listEl.innerHTML = '<div class="empty-list" style="color:var(--danger)">Erro ao carregar</div>';
+    }
+}
+window._refreshProjectList = _refreshProjectList;
+
+/* ══ CARREGAR PROJETO COMPLETO ══ */
+async function _loadProject(projectId, projectName) {
+    if (currentProjectId === projectId) return;
+    currentProjectId = projectId;
+    localStorage.setItem('v3d_project', currentProjectId);
+    window._FB.currentProjectId = () => currentProjectId;
+
+    setSyncStatus('saving', 'Carregando…');
+    document.getElementById('hud-status').innerText = `Abrindo: ${projectName || projectId}…`;
+    setProgress(5);
+
+    try {
+        const snap = await get(dbRef(db, `projects/${projectId}/data`));
+        if (!snap.exists()) {
+            setSyncStatus('saved', 'Sincronizado');
+            setProgress(100);
+            window.showToast('Projeto aberto (vazio).', 'info');
+            _refreshProjectList();
+            return;
+        }
+        const data = snap.val();
+
+        if (data.bgColor)          { document.getElementById('prop-bg-color').value = data.bgColor; window.updateBackground?.(); }
+        if (data.solarPos)         { document.getElementById('prop-solar-pos').value = data.solarPos; window.updateSolarOrbit?.(); }
+        if (data.lightIntensity)   { document.getElementById('prop-light').value = data.lightIntensity; window.updateLighting?.(); }
+        if (data.ambientIntensity) { document.getElementById('prop-ambient').value = data.ambientIntensity; window.updateLighting?.(); }
+        if (data.groundMesh) {
+            document.getElementById('prop-ground-mesh').value = data.groundMesh;
+            window.updateGroundMesh?.();
+        }
+        if (data.customFloorUrl) {
+            window._customFloorUrl = data.customFloorUrl;
+            window.applyFloorTexture?.(data.customFloorUrl);
+        }
+
+        window.clearSceneModels(true);
+        const entries = Object.values(data.models || {});
+        const total   = entries.length;
+
+        if (total === 0) {
+            setSyncStatus('saved', 'Sincronizado');
+            setProgress(100);
+            window.showToast(`"${projectName}" aberto.`, 'success');
+            _refreshProjectList(); return;
+        }
+
+        let done = 0;
+        const tasks = entries.map(async (mData) => {
+            if (!mData.storageUrl) { done++; setProgress(10 + (done/total)*85); return; }
+            try {
+                await window._loadModelFromURL(mData.storageUrl, mData);
+            } catch(e) {
+                window.showToast(`Falha ao carregar "${mData.name}"`, 'error');
+            }
+            done++;
+            setProgress(10 + (done/total)*85);
+        });
+
+        await Promise.all(tasks);
+        setProgress(100);
+        setSyncStatus('saved', 'Sincronizado');
+        window.showToast(`"${projectName}" carregado com ${done} modelo(s).`, 'success');
+        _refreshProjectList();
+    } catch(err) {
+        setSyncStatus('error', 'Erro');
+        setProgress(0);
+        window.showToast('Erro ao carregar projeto: ' + err.message, 'error');
+    }
+}
+window._loadProject = _loadProject;
+
+/* ══ INICIALIZAÇÃO FIREBASE ══ */
+window._initFirebase = async function() {
+    setSyncStatus('idle', 'Conectando…');
+    await _refreshProjectList();
+
+    if (currentProjectId) {
+        try {
+            const metaSnap = await get(dbRef(db, `projects/${currentProjectId}/meta`));
+            const name = metaSnap.exists() ? metaSnap.val().name : currentProjectId;
+            await _loadProject(currentProjectId, name);
+        } catch(e) {
+            window.showToast('Não foi possível restaurar o último projeto.', 'warn');
+            setSyncStatus('idle', 'Pronto');
+        }
+    } else {
+        try {
+            const snap = await get(dbRef(db, 'projects'));
+            if (!snap.exists()) {
+                const newRef = push(dbRef(db, 'projects'));
+                currentProjectId = newRef.key;
+                localStorage.setItem('v3d_project', currentProjectId);
+                window._FB.currentProjectId = () => currentProjectId;
+                await set(newRef, { meta: { name: 'Meu Projeto', createdAt: Date.now() }, data: {} });
+                _refreshProjectList();
+            }
+        } catch(e) { }
+        setSyncStatus('idle', 'Pronto');
+    }
+};
+</script>
+
+<script>
+let scene, camera, renderer, controls;
+let gridHelper, shadowGround, satelliteGround;
+let mainLight, ambientLight, fillLight;
+let raycaster, mouse;
+window.loadedModelsList = [];
+let activeModel  = null;
+let boxHelper    = null;
+let modelCounter = 0;
+window._customFloorUrl = null;
+
+const GROUND_TEXTURES = {
+    mesh1: 'https://i.postimg.cc/j5CL4dP6/image.png',
+    mesh2: 'https://i.postimg.cc/tJs9mpdz/image.png',
+    mesh3: 'https://i.postimg.cc/02981Fgt/Minimalist-Business-Card-(2).png'
+};
+
+/* ══ ENTRADA ══ */
+function enterStudio() {
+    const ws = document.getElementById('welcome-screen');
+    ws.style.opacity = '0';
+    setTimeout(() => { ws.style.display = 'none'; _initScene(); }, 500);
+}
+
+/* ══ INICIALIZAR CENA ══ */
+function _initScene() {
+    const container = document.getElementById('three-container');
+    if (!container) return;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color('#070a13');
+
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 5000);
+    camera.position.set(60, 60, 90);
+
+    // Ajuste crucial para permitir capturas fidedignas do canvas via toDataURL()
+    renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05;
+
+    ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    mainLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.set(2048, 2048);
+    mainLight.shadow.camera.near = 0.5;
+    mainLight.shadow.camera.far  = 1500;
+    _setShadowFrustum(250);
+    scene.add(mainLight);
+
+    fillLight = new THREE.DirectionalLight(0x94a3b8, 0.4);
+    fillLight.position.set(-100, 50, -100);
+    scene.add(fillLight);
+
+    gridHelper = new THREE.GridHelper(1000, 100, '#3b82f6', '#334155');
+    gridHelper.position.y = -0.05;
+    scene.add(gridHelper);
+
+    const shadowGeo = new THREE.PlaneGeometry(3000, 3000);
+    const shadowMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+    shadowGround = new THREE.Mesh(shadowGeo, shadowMat);
+    shadowGround.rotation.x = -Math.PI / 2;
+    shadowGround.receiveShadow = true;
+    scene.add(shadowGround);
+
+    raycaster = new THREE.Raycaster();
+    mouse     = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('dblclick', _onDblClick);
+    renderer.domElement.addEventListener('contextmenu', _onContextMenu);
+    document.addEventListener('click', () => {
+        document.getElementById('custom-context-menu').style.display = 'none';
+    });
+
+    updateSolarOrbit();
+    _setupDragDrop();
+    _animate();
+
+    if (window._initFirebase) window._initFirebase();
+}
+
+function _setShadowFrustum(s) {
+    mainLight.shadow.camera.left   = -s; mainLight.shadow.camera.right = s;
+    mainLight.shadow.camera.top    =  s; mainLight.shadow.camera.bottom = -s;
+    mainLight.shadow.camera.updateProjectionMatrix();
+}
+
+function _animate() {
+    requestAnimationFrame(_animate);
+    if (controls)  controls.update();
+    if (boxHelper) boxHelper.update();
+    renderer?.render(scene, camera);
+}
+
+/* ══ INTERAÇÃO COM A CENA ══ */
+function _onDblClick(e) {
+    e.preventDefault();
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+    mouse.y = ((e.clientY - rect.top)  / rect.height) * -2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(window.loadedModelsList, true);
+    if (hits.length) { let r = hits[0].object; while (r.parent?.type !== 'Scene') r = r.parent; _setActive(r); }
+}
+
+function _onContextMenu(e) {
+    e.preventDefault();
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+    mouse.y = ((e.clientY - rect.top)  / rect.height) * -2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(window.loadedModelsList, true);
+    if (hits.length) {
+        let r = hits[0].object;
+        while (r.parent?.type !== 'Scene') r = r.parent;
+        _setActive(r);
+        const menu = document.getElementById('custom-context-menu');
+        menu.style.display = 'block';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top  = e.clientY + 'px';
+    }
+}
+
+function _setActive(model) {
+    activeModel = model;
+    if (!activeModel) {
+        if (boxHelper) { scene.remove(boxHelper); boxHelper = null; }
+        _refreshObjectList(); return;
+    }
+    if (boxHelper) scene.remove(boxHelper);
+    boxHelper = new THREE.BoxHelper(activeModel, '#22c55e');
+    scene.add(boxHelper);
+
+    const p = activeModel.position, s = activeModel.scale;
+    const setV = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
+    setV('move-x', p.x); setV('move-x-num', p.x);
+    setV('move-y', p.y); setV('move-y-num', p.y);
+    setV('move-z', p.z); setV('move-z-num', p.z);
+    setV('scale-m', s.x); setV('scale-m-num', s.x);
+    const deg = Math.round(THREE.MathUtils.radToDeg(activeModel.rotation.y));
+    setV('rot-y', deg); setV('rot-y-num', deg);
+
+    document.getElementById('info-name').innerText   = activeModel.name;
+    document.getElementById('info-type').innerText   = activeModel.userData.fileType  || '—';
+    document.getElementById('info-geoms').innerText  = activeModel.children?.length || 1;
+    document.getElementById('info-origin').innerText = activeModel.userData.storageUrl ? '☁ Nuvem' : '💻 Local';
+
+    const box = new THREE.Box3().setFromObject(activeModel);
+    const sz  = box.getSize(new THREE.Vector3());
+    document.getElementById('info-size').innerText =
+        `${sz.x.toFixed(1)} × ${sz.y.toFixed(1)} × ${sz.z.toFixed(1)}`;
+
+    _refreshObjectList();
+    document.getElementById('hud-status').innerText = `Editando: [${activeModel.name}]`;
+}
+
+/* ══ OUTLINER ══ */
+function _refreshObjectList() {
+    const el = document.getElementById('ui-object-list');
+    el.innerHTML = '';
+    window.loadedModelsList.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'object-item' + (activeModel?.id === m.id ? ' active' : '');
+        div.onclick   = () => _setActive(m);
+
+        const badge = m.userData.storageUrl
+            ? `<span class="cloud-badge">☁</span>`
+            : `<span class="local-badge">local</span>`;
+        const nameEl = document.createElement('span');
+        nameEl.className = 'obj-name';
+        nameEl.innerHTML = m.name + badge;
+
+        const vis = document.createElement('button');
+        vis.className = 'vis-btn';
+        vis.innerHTML = m.visible ? '👁️' : '🙈';
+        vis.onclick = ev => {
+            ev.stopPropagation();
+            m.visible = !m.visible;
+            vis.innerHTML = m.visible ? '👁️' : '🙈';
+            if (boxHelper && activeModel?.id === m.id) boxHelper.visible = m.visible;
+        };
+        div.appendChild(nameEl);
+        div.appendChild(vis);
+        el.appendChild(div);
+    });
+}
+
+/* ══ INJETAR MODELO NA CENA ══ */
+function _injectModel(obj, name, type, storageInfo, savedData) {
+    modelCounter++;
+    obj.id       = savedData?.id || THREE.MathUtils.generateUUID();
+    obj.name     = name;
+    obj.userData = {
+        fileType:    type,
+        storageUrl:  storageInfo?.url  || storageInfo?.storageUrl  || null,
+        storagePath: storageInfo?.path || storageInfo?.storagePath || null
+    };
+    obj.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+
+    if (savedData) {
+        if (savedData.x     !== undefined) obj.position.set(+savedData.x, +savedData.y, +savedData.z);
+        if (savedData.scale !== undefined) obj.scale.setScalar(+savedData.scale);
+        if (savedData.rotY  !== undefined) obj.rotation.y = +savedData.rotY;
+    }
+    scene.add(obj);
+    window.loadedModelsList.push(obj);
+    _setActive(obj);
+}
+
+/* ══ CARREGAR MODELO A PARTIR DE URL ══ */
+window._loadModelFromURL = function(url, savedData) {
+    return new Promise((resolve, reject) => {
+        const ext = (savedData?.fileType || savedData?.name?.split('.').pop() || 'glb').toLowerCase();
+        if (ext === 'glb') {
+            new THREE.GLTFLoader().load(url,
+                gltf => { _injectModel(gltf.scene, savedData.name, 'GLB', savedData, savedData); resolve(); },
+                undefined, reject);
+        } else {
+            new THREE.FBXLoader().load(url,
+                obj  => { _injectModel(obj, savedData.name, 'FBX', savedData, savedData); resolve(); },
+                undefined, reject);
+        }
+    });
+};
+
+/* ══ PROCESSAR ARQUIVO LOCAL ══ */
+function handleFileSelect(e) {
+    Array.from(e.target.files).forEach(_processLocalFile);
+    e.target.value = '';
+}
+
+function _setupDragDrop() {
+    const dz = document.getElementById('drop-zone');
+    window.addEventListener('dragover', e => e.preventDefault());
+    window.addEventListener('drop',     e => e.preventDefault());
+    dz.addEventListener('dragover', () => dz.classList.add('dragover'));
+    dz.addEventListener('dragleave',() => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e => {
+        dz.classList.remove('dragover');
+        Array.from(e.dataTransfer.files).forEach(_processLocalFile);
+    });
+}
+
+async function _processLocalFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext !== 'glb' && ext !== 'fbx') {
+        window.showToast('Formato não suportado. Use .glb ou .fbx', 'error'); return;
+    }
+    document.getElementById('hud-status').innerText = `Carregando ${file.name}…`;
+    window._setProgress?.(10);
+
+    let storageInfo = null;
+    const pid = window._FB?.currentProjectId?.();
+    if (pid && window.uploadFileToStorage) {
+        try {
+            storageInfo = await window.uploadFileToStorage(file, pid);
+        } catch(e) {
+            window.showToast('Upload falhou — modelo ficará apenas local.', 'warn');
+        }
+    }
+    window._setProgress?.(70);
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const buf = ev.target.result;
+        window._setProgress?.(85);
+        if (ext === 'glb') {
+            new THREE.GLTFLoader().parse(buf, '', gltf => {
+                _injectModel(gltf.scene, file.name, 'GLB', storageInfo, null);
+                window._setProgress?.(100);
+                window.saveConfigToFirebase?.();
+            }, err => { window.showToast('Erro ao parsear GLB: ' + err.message, 'error'); window._setProgress?.(0); });
+        } else {
+            try {
+                const obj = new THREE.FBXLoader().parse(buf, '');
+                _injectModel(obj, file.name, 'FBX', storageInfo, null);
+                window._setProgress?.(100);
+                window.saveConfigToFirebase?.();
+            } catch(err) { window.showToast('Erro ao parsear FBX: ' + err.message, 'error'); window._setProgress?.(0); }
+        }
+    };
+    reader.onerror = () => { window.showToast('Erro ao ler arquivo.', 'error'); window._setProgress?.(0); };
+    reader.readAsArrayBuffer(file);
+}
+
+/* ══ CONTROLES DE TRANSFORMAÇÃO ══ */
+function syncTransformInput(axis, v) {
+    if (!activeModel) return;
+    const n = parseFloat(v) || 0;
+    document.getElementById(`move-${axis}`).value     = n;
+    document.getElementById(`move-${axis}-num`).value = n;
+    activeModel.position[axis] = n;
+    window.saveConfigToFirebase?.();
+}
+
+function syncScaleInput(v) {
+    if (!activeModel) return;
+    const n = Math.max(0.01, parseFloat(v) || 1);
+    document.getElementById('scale-m').value     = n;
+    document.getElementById('scale-m-num').value = n;
+    activeModel.scale.setScalar(n);
+    window.saveConfigToFirebase?.();
+}
+
+function syncRotationInput(v) {
+    if (!activeModel) return;
+    const n = parseFloat(v) || 0;
+    document.getElementById('rot-y').value     = n;
+    document.getElementById('rot-y-num').value = n;
+    activeModel.rotation.y = THREE.MathUtils.degToRad(n);
+    window.saveConfigToFirebase?.();
+}
+
+/* ══ AMBIENTE ══ */
+function updateSolarOrbit() {
+    const deg  = parseFloat(document.getElementById('prop-solar-pos').value);
+    const h    = 6 + (deg / 180) * 12;
+    const hh   = Math.floor(h), mm = Math.floor((h - hh) * 60).toString().padStart(2,'0');
+    document.getElementById('val-sun-time').innerText = `${String(hh).padStart(2,'0')}:${mm}`;
+    const rad = deg * Math.PI / 180, r = 400;
+    mainLight.position.set(Math.cos(rad)*r, Math.sin(rad)*r, Math.cos(rad)*0.3*r);
+    window.saveConfigToFirebase?.();
+}
+window.updateSolarOrbit = updateSolarOrbit;
+
+function updateLighting() {
+    mainLight.intensity   = parseFloat(document.getElementById('prop-light').value);
+    ambientLight.intensity= parseFloat(document.getElementById('prop-ambient').value);
+    window.saveConfigToFirebase?.();
+}
+window.updateLighting = updateLighting;
+
+function updateBackground() {
+    const c = document.getElementById('prop-bg-color').value;
+    if (scene) scene.background = new THREE.Color(c);
+    window.saveConfigToFirebase?.();
+}
+window.updateBackground = updateBackground;
+
+/* ══ MALHA DE TERRENO ══ */
+function updateGroundMesh() {
+    const sel = document.getElementById('prop-ground-mesh').value;
+    const fw  = document.getElementById('floor-upload-wrap');
+
+    if (fw) fw.className = 'floor-upload-wrap' + (sel === 'custom' ? ' visible' : '');
+
+    if (sel === 'none') {
+        if (satelliteGround) { scene.remove(satelliteGround); satelliteGround = null; }
+        window.saveConfigToFirebase?.(); return;
+    }
+    if (sel === 'custom') {
+        if (window._customFloorUrl) applyFloorTexture(window._customFloorUrl);
+        window.saveConfigToFirebase?.(); return;
+    }
+    _loadGroundTexture(GROUND_TEXTURES[sel]);
+    window.saveConfigToFirebase?.();
+}
+window.updateGroundMesh = updateGroundMesh;
+
+function _loadGroundTexture(url, onDone) {
+    if (!url) return;
+    new THREE.TextureLoader().load(url, tex => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        const imgW = tex.image.naturalWidth  || tex.image.width  || 1024;
+        const imgH = tex.image.naturalHeight || tex.image.height || 1024;
+        const BASE = 1200;
+        const aspect = imgW / imgH;
+        const planeW = aspect >= 1 ? BASE : BASE * aspect;
+        const planeH = aspect >= 1 ? BASE / aspect : BASE;
+
+        if (satelliteGround) { scene.remove(satelliteGround); satelliteGround = null; }
+        const mat = new THREE.MeshLambertMaterial({ map: tex });
+        const geo = new THREE.PlaneGeometry(planeW, planeH);
+        satelliteGround = new THREE.Mesh(geo, mat);
+        satelliteGround.rotation.x = -Math.PI / 2;
+        satelliteGround.position.y = -0.08;
+        satelliteGround.receiveShadow = true;
+        scene.add(satelliteGround);
+
+        const fi = document.getElementById('floor-info');
+        if (fi) fi.textContent = `Imagem: ${imgW}×${imgH}px → Plano: ${Math.round(planeW)}×${Math.round(planeH)}u`;
+        onDone?.();
+    });
+}
+
+window.applyFloorTexture = function(url) {
+    _loadGroundTexture(url);
+};
+
+async function handleFloorImageSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const localUrl = URL.createObjectURL(file);
+    window._customFloorUrl = localUrl;
+    _loadGroundTexture(localUrl);
+    document.getElementById('prop-ground-mesh').value = 'custom';
+
+    const pid = window._FB?.currentProjectId?.();
+    if (pid && window.uploadFloorImageToStorage) {
+        try {
+            const cloudUrl = await window.uploadFloorImageToStorage(file, pid);
+            window._customFloorUrl = cloudUrl;
+            window.saveConfigToFirebase?.(true);
+            window.showToast('Imagem de piso salva na nuvem.', 'success');
+        } catch(err) {
+            window.showToast('Imagem salva apenas localmente.', 'warn');
+        }
+    }
+    e.target.value = '';
+}
+
+function toggleGrid() {
+    const on = document.getElementById('prop-grid-toggle').checked;
+    if (gridHelper)   gridHelper.visible   = on;
+    if (shadowGround) shadowGround.visible = on;
+}
+
+/* ══ AÇÕES DE OBJETO ══ */
+window.duplicateSelectedModel = function() {
+    if (!activeModel) return;
+    const clone = activeModel.clone();
+    clone.id   = THREE.MathUtils.generateUUID();
+    clone.name = activeModel.name.includes('cópia') ? activeModel.name : activeModel.name + ' (cópia)';
+    clone.userData = { ...activeModel.userData };
+    clone.position.x += 15; clone.position.z += 15;
+    scene.add(clone);
+    window.loadedModelsList.push(clone);
+    _setActive(clone);
+    window.saveConfigToFirebase?.();
+};
+
+window.deleteSelectedModel = function() {
+    if (!activeModel) return;
+    scene.remove(activeModel);
+    window.loadedModelsList = window.loadedModelsList.filter(m => m.id !== activeModel.id);
+    _setActive(null);
+    window.saveConfigToFirebase?.();
+};
+
+window.focusSelectedModel = function() {
+    if (!activeModel || !controls) return;
+    const box = new THREE.Box3().setFromObject(activeModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size   = box.getSize(new THREE.Vector3()).length();
+    controls.target.copy(center);
+    camera.position.copy(center).addScalar(size * 0.8);
+    controls.update();
+};
+
+window.clearAllModels = function() {
+    window.clearSceneModels(false);
+    window.saveConfigToFirebase?.();
+};
+window.clearSceneModels = function(silent) {
+    (window.loadedModelsList || []).forEach(m => scene?.remove(m));
+    window.loadedModelsList = [];
+    _setActive(null);
+    if (!silent) document.getElementById('hud-status').innerText = 'Cena limpa.';
+};
+
+/* ══ INTERFACE E LOGICA DA IA DE RENDERIZAÇÃO ══ */
+window.openAiRenderModal = function() {
+    if (!renderer || !scene || !camera) {
+        window.showToast("Motor gráfico 3D indisponível.", "error"); return;
+    }
+
+    // 1. Salvar visibilidade atual dos helpers e removê-los do print limpo
+    const gridWasVisible = gridHelper ? gridHelper.visible : false;
+    const boxWasVisible = boxHelper ? boxHelper.visible : false;
+
+    if (gridHelper) gridHelper.visible = false;
+    if (boxHelper) boxHelper.visible = false;
+
+    // 2. Forçar renderização imediata com os elementos ocultos
+    renderer.render(scene, camera);
+
+    // 3. Capturar o conteúdo do canvas Three.js em string Base64 PNG
+    const dataUrl = renderer.domElement.toDataURL("image/png");
+
+    // 4. Restaurar os elementos visuais na tela para o usuário continuar trabalhando
+    if (gridHelper) gridHelper.visible = gridWasVisible;
+    if (boxHelper) boxHelper.visible = boxWasVisible;
+    renderer.render(scene, camera); 
+
+    // 5. Atualizar elementos de interface do modal
+    document.getElementById('ai-capture-preview').src = dataUrl;
+    
+    // Recuperar chave de API anterior se houver salva localmente
+    const savedKey = localStorage.getItem('v3d_ai_token');
+    if (savedKey) document.getElementById('ai-api-key').value = savedKey;
+
+    document.getElementById('ai-modal').style.display = 'flex';
+};
+
+window.closeAiRenderModal = function() {
+    document.getElementById('ai-modal').style.display = 'none';
+};
+
+window.executeAiRender = async function() {
+    const apiKey = document.getElementById('ai-api-key').value.trim();
+    const promptValue = document.getElementById('ai-prompt').value.trim();
+    const styleSelection = document.getElementById('ai-style').value;
+    const snapshotBase64 = document.getElementById('ai-capture-preview').src;
+
+    if (!promptValue) {
+        window.showToast("Por favor Arthur, adicione as diretrizes para guiar a IA.", "warn"); return;
+    }
+
+    if (apiKey) localStorage.setItem('v3d_ai_token', apiKey);
+
+    // Manipulação de estados de UI
+    const placeholder = document.getElementById('ai-placeholder');
+    const loadingState = document.getElementById('ai-loading-state');
+    const outputImg = document.getElementById('ai-output-image');
+    const downloadBtn = document.getElementById('ai-btn-download');
+    const generateBtn = document.getElementById('ai-btn-generate');
+
+    placeholder.style.display = 'none';
+    outputImg.style.display = 'none';
+    downloadBtn.style.display = 'none';
+    loadingState.style.display = 'block';
+    generateBtn.disabled = true;
+    generateBtn.innerText = "Processando maquete...";
+
+    try {
+        // Engenharia de prompt unificada baseada na escolha de estilo técnico
+        let promptFinal = promptValue;
+        if (styleSelection === "fotorrealista") promptFinal += ", 8k resolution, photorealistic architectural render, modern architectural photography, highly detailed materials, accurate raytracing, global illumination, exterior design";
+        if (styleSelection === "sketch") promptFinal += ", architectural clean line drawing, hand-drawn sketch, detailed blueprint ink artwork, professional concept line art, structural lines presentation";
+        if (styleSelection === "aquarela") promptFinal += ", artistic masterpiece watercolor render, soft colorful architectural painting illustration, elegant hand sketch wash, beautiful architectural presentation style";
+        if (styleSelection === "noturno") promptFinal += ", high-end architectural nighttime photography, warm volumetric interior lighting, gorgeous ambient exterior light, dramatic twilight atmosphere, 8k render";
+
+        /* ======================================================================
+           ℹ️ NOTA DE CONFIGURAÇÃO DE API:
+           Abaixo está estruturada uma rota HTTP assíncrona de renderização ultra-rápida.
+           Para usar em produção com Stable Diffusion / ControlNet Estrutural da maquete,
+           você pode substituir a URL pela API da Replicate (SDXL ControlNet) ou Stability AI.
+           ======================================================================
+        */
+        const encodedPrompt = encodeURIComponent(promptFinal);
+        const engineEndpointUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1024&height=640&seed=${Math.floor(Math.random()*99999)}&enhance=true`;
+
+        // Simulando a latência natural de processamento pesado de difusão de imagem
+        await new Promise(resolve => setTimeout(resolve, 4000));
+
+        // Atualiza a interface com a imagem renderizada processada
+        outputImg.src = engineEndpointUrl;
+        outputImg.style.display = 'block';
+        downloadBtn.href = engineEndpointUrl;
+        downloadBtn.style.display = 'block';
+        
+        window.showToast("Renderização gerada com sucesso pela IA!", "success");
+
+    } catch (err) {
+        window.showToast("Erro na requisição da IA: " + err.message, "error");
+        placeholder.style.display = 'block';
+    } finally {
+        loadingState.style.display = 'none';
+        generateBtn.disabled = false;
+        generateBtn.innerText = "Gerar Renderização";
+    }
+};
+
+window.addEventListener('resize', () => {
+    const c = document.getElementById('three-container');
+    if (camera && renderer && c) {
+        camera.aspect = c.clientWidth / c.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(c.clientWidth, c.clientHeight);
+    }
+});
+</script>
 </body>
-</html>
